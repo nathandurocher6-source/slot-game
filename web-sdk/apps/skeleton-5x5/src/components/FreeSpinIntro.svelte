@@ -6,76 +6,142 @@
 </script>
 
 <script lang="ts">
-	import { CanvasSizeRectangle } from 'components-layout';
-	import { stateUrlDerived } from 'state-shared';
+	import { CanvasSizeRectangle, MainContainer, OnPressFullScreen } from 'components-layout';
+	import { OnHotkey } from 'components-shared';
 	import { FadeContainer } from 'components-pixi';
 	import { waitForResolve } from 'utils-shared/wait';
-	import { BitmapText, SpineProvider, SpineSlot, SpineTrack, Sprite } from 'pixi-svelte';
+	import { Container, Rectangle, Text } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
-	import PressToContinue from './PressToContinue.svelte';
-	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
-
-	type AnimationName = 'intro' | 'idle';
 
 	const context = getContext();
 
 	let show = $state(false);
-	let animationName = $state<AnimationName>('intro');
-	let freeSpinsFromEvent = $state(0);
+	let totalFreeSpins = $state(0);
 	let oncomplete = $state(() => {});
 
 	context.eventEmitter.subscribeOnMount({
 		freeSpinIntroShow: () => (show = true),
 		freeSpinIntroHide: () => (show = false),
 		freeSpinIntroUpdate: async (emitterEvent) => {
-			// if (emitterEvent.extraSpins) {
-			// 	context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_fs_respins' });
-			// }
-			// freeSpinsFromEvent = emitterEvent.extraSpins ?? emitterEvent.totalFreeSpins;
-			freeSpinsFromEvent = emitterEvent.totalFreeSpins;
+			totalFreeSpins = emitterEvent.totalFreeSpins;
 			await waitForResolve((resolve) => (oncomplete = resolve));
 		},
 	});
+
+	const continueAction = () => {
+		oncomplete();
+	};
+
+	const canvasSizes = $derived(context.stateLayoutDerived.canvasSizes());
+	const CARD_WIDTH = $derived(Math.min(canvasSizes.width * 0.88, 540));
+	const CARD_HEIGHT = 240;
 </script>
 
 <FadeContainer {show}>
-	<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} />
+	<!-- Dark Screen Blur Backdrop -->
+	<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.82} zIndex={100} />
 
-	<FreeSpinAnimation>
-		{#snippet children({ sizes })}
-			<Sprite
-				anchor={{ x: 0.5, y: 1.2 }}
-				width={500 * 2.2}
-				height={156 * 2.2}
-				key="freespins_{stateUrlDerived.lang()}.png"
+	<!-- Fullscreen Click & Hotkey Handling -->
+	<OnHotkey hotkey="Space" onpress={continueAction} />
+	<OnHotkey hotkey="Enter" onpress={continueAction} />
+	<OnPressFullScreen onpress={continueAction} />
+
+	<MainContainer>
+		<Container
+			x={context.stateGameDerived.boardLayout().x}
+			y={context.stateGameDerived.boardLayout().y}
+			zIndex={101}
+		>
+			<!-- Glow Accent -->
+			<Rectangle
+				width={CARD_WIDTH + 14}
+				height={CARD_HEIGHT + 14}
+				borderRadius={28}
+				backgroundColor={0xff007f}
+				backgroundAlpha={0.25}
+				borderColor={0xff007f}
+				borderWidth={2}
+				anchor={0.5}
 			/>
 
-			<SpineProvider key="fsIntroNumber" width={sizes.width * 0.4}>
-				<SpineTrack
-					trackIndex={0}
-					{animationName}
-					loop={animationName === 'idle'}
-					listener={{
-						complete: () => (animationName = 'idle'),
-					}}
-				/>
-				<SpineSlot slotName="slot_number">
-					<BitmapText
-						anchor={{ x: 0.5, y: 0.5 }}
-						text={freeSpinsFromEvent}
-						style={{
-							fontFamily: 'gold',
-							fontSize: sizes.width * 0.15,
-							fontWeight: 'bold',
-						}}
-					/>
-				</SpineSlot>
-			</SpineProvider>
+			<!-- Modal Card Base -->
+			<Rectangle
+				width={CARD_WIDTH}
+				height={CARD_HEIGHT}
+				borderRadius={22}
+				backgroundColor={0x180924}
+				backgroundAlpha={0.96}
+				borderColor={0xff007f}
+				borderWidth={2.5}
+				anchor={0.5}
+			/>
 
-			<Sprite anchor={{ x: 0.5, y: -3 }} width={183 * 2.2} height={42 * 2.2} key="freespins.png" />
-		{/snippet}
-	</FreeSpinAnimation>
+			<!-- Header Badge -->
+			<Rectangle
+				y={-CARD_HEIGHT * 0.5 + 26}
+				width={260}
+				height={32}
+				borderRadius={8}
+				backgroundColor={0x330940}
+				borderColor={0xff007f}
+				borderWidth={1.5}
+				anchor={0.5}
+			/>
 
-	<PressToContinue onpress={() => oncomplete()} />
+			<Text
+				y={-CARD_HEIGHT * 0.5 + 26}
+				text="BONUS FEATURE"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 14,
+					fontWeight: '900',
+					fill: 0xff66b2,
+					letterSpacing: 2,
+				}}
+			/>
+
+			<!-- Total Spins Awarded Text -->
+			<Text
+				y={-6}
+				text={`${totalFreeSpins} FREE SPINS`}
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 38,
+					fontWeight: '900',
+					fill: 0xffffff,
+				}}
+			/>
+
+			<!-- Subtitle -->
+			<Text
+				y={40}
+				text="PROGRESSIVE GLOBAL MULTIPLIER ACTIVE"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 12,
+					fontWeight: '700',
+					fill: 0x00ff66,
+					letterSpacing: 1.2,
+				}}
+			/>
+
+			<!-- Continue prompt -->
+			<Text
+				y={CARD_HEIGHT * 0.5 - 20}
+				text="CLICK OR PRESS SPACE TO START"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 11,
+					fontWeight: '700',
+					fill: 0x94a3b8,
+					letterSpacing: 1.5,
+				}}
+			/>
+		</Container>
+	</MainContainer>
 </FadeContainer>

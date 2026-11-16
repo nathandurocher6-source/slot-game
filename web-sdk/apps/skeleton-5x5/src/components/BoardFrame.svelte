@@ -5,78 +5,93 @@
 </script>
 
 <script lang="ts">
-	import { Sprite, SpineProvider, SpineTrack } from 'pixi-svelte';
-
+	import { Container, Rectangle } from 'pixi-svelte';
 	import { getContext } from '../game/context';
+	import { SYMBOL_SIZE } from '../game/constants';
 
 	const context = getContext();
-	const SPINE_SCALE = { width: 0.6, height: 0.6 };
-	const SPRITE_SCALE = { width: 1.07, height: 1.19 };
-	const BG_RATIO = 937 / 806;
-	const POSITION_ADJUSTMENT = 1.01;
-
-	type AnimationName = 'reelhouse_glow_start' | 'reelhouse_glow_idle' | 'reelhouse_glow_exit';
-
-	let animationName = $state<AnimationName | undefined>(undefined);
-	let loop = $state(false);
+	let glowActive = $state(false);
 
 	context.eventEmitter.subscribeOnMount({
 		boardFrameGlowShow: () => {
-			animationName = 'reelhouse_glow_start';
-			loop = false;
+			glowActive = true;
 		},
 		boardFrameGlowHide: () => {
-			if (animationName) animationName = 'reelhouse_glow_exit';
+			glowActive = false;
 		},
 	});
+
+	const boardLayout = $derived(context.stateGameDerived.boardLayout());
+	const FRAME_PADDING = 14;
+	const FRAME_WIDTH = $derived(boardLayout.width + FRAME_PADDING * 2);
+	const FRAME_HEIGHT = $derived(boardLayout.height + FRAME_PADDING * 2);
 </script>
 
-{#if animationName}
-	<SpineProvider
-		zIndex={-1}
-		key="reelhouse"
-		x={context.stateGameDerived.boardLayout().x * POSITION_ADJUSTMENT}
-		y={context.stateGameDerived.boardLayout().y * POSITION_ADJUSTMENT}
-		width={context.stateGameDerived.boardLayout().width * SPINE_SCALE.width}
-		height={context.stateGameDerived.boardLayout().height * SPINE_SCALE.height}
-	>
-		<SpineTrack
-			trackIndex={0}
-			{animationName}
-			{loop}
-			listener={{
-				complete: (entry) => {
-					if (entry.animation) {
-						if (entry.animation.name === 'reelhouse_glow_start') {
-							animationName = 'reelhouse_glow_idle';
-							loop = true;
-						}
-
-						if (entry.animation.name === 'reelhouse_glow_exit') {
-							animationName = undefined;
-							loop = false;
-						}
-					}
-				},
-			}}
+<Container x={boardLayout.x} y={boardLayout.y}>
+	<!-- Glow Aura (Active in Free Spins) -->
+	{#if glowActive}
+		<Rectangle
+			width={FRAME_WIDTH + 14}
+			height={FRAME_HEIGHT + 14}
+			borderRadius={26}
+			backgroundColor={0x8a2be2}
+			backgroundAlpha={0.25}
+			borderColor={0xff007f}
+			borderWidth={2}
+			borderAlpha={0.8}
+			anchor={0.5}
 		/>
-	</SpineProvider>
-{/if}
+	{/if}
 
-<Sprite
-	key="frame_bg.png"
-	anchor={0.5}
-	x={context.stateGameDerived.boardLayout().x * POSITION_ADJUSTMENT}
-	y={context.stateGameDerived.boardLayout().y * POSITION_ADJUSTMENT}
-	width={context.stateGameDerived.boardLayout().width * BG_RATIO * SPRITE_SCALE.width}
-	height={context.stateGameDerived.boardLayout().width * SPRITE_SCALE.height}
-/>
+	<!-- Outer Frame Panel -->
+	<Rectangle
+		width={FRAME_WIDTH}
+		height={FRAME_HEIGHT}
+		borderRadius={20}
+		backgroundColor={0x0e131b}
+		backgroundAlpha={0.96}
+		borderColor={glowActive ? 0xff007f : 0x253245}
+		borderWidth={glowActive ? 2.5 : 2}
+		anchor={0.5}
+	/>
 
-<Sprite
-	key="frame_edge.png"
-	anchor={0.5}
-	x={context.stateGameDerived.boardLayout().x * POSITION_ADJUSTMENT}
-	y={context.stateGameDerived.boardLayout().y * POSITION_ADJUSTMENT}
-	width={context.stateGameDerived.boardLayout().width * BG_RATIO * SPRITE_SCALE.width}
-	height={context.stateGameDerived.boardLayout().width * SPRITE_SCALE.height}
-/>
+	<!-- Inner Board Shadow Area -->
+	<Rectangle
+		width={boardLayout.width + 4}
+		height={boardLayout.height + 4}
+		borderRadius={14}
+		backgroundColor={0x080b10}
+		backgroundAlpha={0.8}
+		borderColor={0x19212d}
+		borderWidth={1}
+		anchor={0.5}
+	/>
+
+	<!-- Column Dividers for 5x5 Grid Clarity -->
+	{#each [1, 2, 3, 4] as colIndex}
+		{@const colX = -boardLayout.width * 0.5 + colIndex * SYMBOL_SIZE}
+		<Rectangle
+			x={colX}
+			y={0}
+			width={1}
+			height={boardLayout.height}
+			backgroundColor={0x1c2533}
+			backgroundAlpha={0.6}
+			anchor={0.5}
+		/>
+	{/each}
+
+	<!-- Row Dividers for 5x5 Grid Clarity -->
+	{#each [1, 2, 3, 4] as rowIndex}
+		{@const rowY = -boardLayout.height * 0.5 + rowIndex * SYMBOL_SIZE}
+		<Rectangle
+			x={0}
+			y={rowY}
+			width={boardLayout.width}
+			height={1}
+			backgroundColor={0x1c2533}
+			backgroundAlpha={0.6}
+			anchor={0.5}
+		/>
+	{/each}
+</Container>

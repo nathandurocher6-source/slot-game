@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-	import { BitmapText, Container, SpineProvider, SpineTrack } from 'pixi-svelte';
+	import { Container, Rectangle, Text } from 'pixi-svelte';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
@@ -39,21 +39,37 @@
 			{#each reel as multiplier, rowIndex}
 				{#if multiplier > 0}
 					<Container x={(reelIndex + 0.5) * SYMBOL_SIZE} y={(rowIndex + 0.5) * SYMBOL_SIZE}>
-						<SpineProvider key="anticipation" width={SYMBOL_SIZE * 0.19}>
-							<SpineTrack trackIndex={0} animationName={'payframe'} loop />
-						</SpineProvider>
+						<!-- Highlight Outline -->
+						<Rectangle
+							width={SYMBOL_SIZE - 8}
+							height={SYMBOL_SIZE - 8}
+							borderRadius={12}
+							backgroundColor={0xffd700}
+							backgroundAlpha={0.15}
+							borderColor={0xffd700}
+							borderWidth={1.5}
+							anchor={0.5}
+						/>
 						{#if multiplier > 1}
-							<BitmapText
-								x={-SYMBOL_SIZE * 0.05}
-								anchor={{
-									x: 0.5,
-									y: 0.5,
-								}}
-								text={`${multiplier} X`}
+							<Rectangle
+								y={24}
+								width={48}
+								height={20}
+								borderRadius={5}
+								backgroundColor={0x0b131c}
+								borderColor={0xffd700}
+								borderWidth={1}
+								anchor={0.5}
+							/>
+							<Text
+								y={24}
+								anchor={0.5}
+								text={`x${multiplier}`}
 								style={{
-									fontFamily: 'gold',
-									fontSize: SYMBOL_SIZE * 0.5,
-									letterSpacing: -5,
+									fontFamily: 'system-ui, -apple-system, sans-serif',
+									fontSize: 11,
+									fontWeight: '800',
+									fill: 0xffe066,
 								}}
 							/>
 						{/if}

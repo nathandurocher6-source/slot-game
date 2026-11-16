@@ -191,7 +191,8 @@ Chaque partie de jeu correspond à un tableau ordonné d'événements JSON (`eve
 
 ### 4.1 Pile Technologique
 - **Svelte 5** : Réactivité granulaire via Runes (`$state`, `$derived`, `$props`).
-- **PixiJS 8** : Moteur de rendu WebGL / WebGPU pour le canvas du slot.
+- **PixiJS 8** : Moteur de rendu WebGL / WebGPU haute performance (60 FPS garanti).
+- **Rendu Procédural "Greybox Studio Debug Pro"** : Rendu vectoriel natif PixiJS (`Container`, `Rectangle`, `Text`) évitant toute dépendance à des assets Spine ou sprites externes manquants, facilitant le prototypage et le skinning futur.
 - **XState** : Gestion de machine à états pour le cycle de vie du spin, les interruptions et le jeu auto.
 - **Turbo** : Orchestrateur de build monorepo garantissant la compilation ordonnée des packages partagés.
 
@@ -201,20 +202,41 @@ web-sdk/apps/skeleton-5x5/
 ├── src/
 │   ├── components/
 │   │   ├── Board.svelte             # Conteneur des rouleaux 5x5
-│   │   ├── BoardFrame.svelte        # Cadre visuel 5x5
-│   │   ├── MultiplierGrid.svelte    # Affichage des multiplicateurs sur chaque cellule
-│   │   ├── TumbleBoard.svelte       # Animation de chute des nouveaux symboles
-│   │   ├── Win.svelte               # Présentation des Big Win / Super Win
-│   │   └── FreeSpinIntro.svelte     # Transitions vers le jeu bonus
+│   │   ├── BoardFrame.svelte        # Cadre visuel 5x5 Greybox Studio
+│   │   ├── Symbol.svelte            # Pont vers le composant de symbole
+│   │   ├── SymbolGreybox.svelte     # Rendu procédural des tuiles L1..L5, H1..H4, W, S, M
+│   │   ├── GlobalMultiplier.svelte  # Gauge HUD du Multiplicateur Global (Free Spins & Tumbles)
+│   │   ├── FreeSpinCounter.svelte   # Compteur de Free Spins responsive (Desktop & Mobile)
+│   │   ├── WinCelebration.svelte    # Overlay de célébration par paliers (Big, Mega, Epic, Sensational, Max Win)
+│   │   ├── Win.svelte               # Adaptateur d'événement pour WinCelebration
+│   │   ├── FreeSpinIntro.svelte     # Modal d'entrée Free Spins procédural
+│   │   ├── FreeSpinOutro.svelte     # Modal de récapitulatif Free Spins procédural
+│   │   ├── LoadingScreen.svelte     # Écran de chargement Greybox Studio avec barre de progression
+│   │   ├── PressToContinue.svelte   # Invite interactive "Click / Space to continue"
+│   │   ├── TumbleBoard.svelte       # Animation de cascade et chute des nouveaux symboles
+│   │   └── ClusterWinAmount.svelte  # Affichage dynamique des montants de gains par cluster
 │   ├── game/
-│   │   ├── bookEventHandlerMap.ts   # Routeur séquentiel des événements du Book
-│   │   ├── config.ts                # Configuration alignée sur le GameConfig Python
+│   │   ├── bookEventHandlerMap.ts   # Routeur séquentiel des événements du Book (wincap inclus)
+│   │   ├── config.ts                # Configuration alignée sur le GameConfig Python (RTP 96%, 3 BetModes, wincap 100k)
+│   │   ├── context.ts               # Initialisation des BetModes (base, booster, buy) et contextes partagés
 │   │   ├── constants.ts             # INITIAL_BOARD (5x5), SYMBOL_SIZE, timings
 │   │   ├── stateGame.svelte.ts      # État réactif Svelte 5 du plateau
 │   │   └── typesBookEvent.ts        # Définitions TypeScript strictes des événements
-│   └── routes/
-│       └── +layout.svelte           # Point d'entrée SvelteKit avec Context et Auth
+│   └── stories/
+│       ├── Skeleton5x5Scenarios.stories.svelte # Replay de scénarios (perte, cascades, FS, célébrations)
+│       ├── Celebrations.stories.svelte         # Test unitaire de chaque palier de célébration
+│       └── ComponentsSymbol.stories.svelte     # Galerie de tous les symboles et états
 ```
+
+### 4.3 Paliers de Célébration (Win Tiers)
+Le composant `WinCelebration.svelte` calcule dynamiquement le ratio `Gain / Mise` :
+- `< 15x` : Gain standard (animation de cluster sans popup intrusive).
+- `15x - 29x` : **BIG WIN** (Ambre néon, durée 2.4s).
+- `30x - 59x` : **MEGA WIN** (Bleu électrique / Cyan, durée 2.8s).
+- `60x - 99x` : **EPIC WIN** (Rouge rubis / Braise, durée 3.2s).
+- `100x - 99 999x` : **SENSATIONAL WIN** (Violet néon / Or, durée 3.8s).
+- `100 000x` ou événement `wincap` : **MAX WIN** (Écran exclusif or/cyan avec bannière *"PLAFOND ATTEINT : x100 000"*).
+- **Interaction Skip** : Un clic n'importe où ou la touche **Espace / Entrée** passe immédiatement le compteur à sa valeur finale ; une deuxième pression ferme l'overlay.
 
 ---
 

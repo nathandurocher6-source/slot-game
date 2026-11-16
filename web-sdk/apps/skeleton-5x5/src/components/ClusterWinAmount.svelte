@@ -3,8 +3,8 @@
 		win: number;
 		mult: number;
 		result: number;
-		reel: number; // 0 | 1 | 2 | 3 | 4 | 5;
-		row: number; // 1 | 2 | 3 | 4 | 5; // excluding the off top row and the off bottom row
+		reel: number;
+		row: number;
 	};
 	export type Win = RawWin & { oncomplete: () => void };
 </script>
@@ -12,14 +12,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
-
-	import { BitmapText } from 'pixi-svelte';
+	import { Text, Container, Rectangle } from 'pixi-svelte';
 	import { stateBetDerived } from 'state-shared';
 	import { SECOND } from 'constants-shared/time';
 	import { FadeContainer } from 'components-pixi';
-	import { waitForTimeout } from 'utils-shared/wait';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
-
 	import { SYMBOL_SIZE } from '../game/constants';
 	import { getContext } from '../game/context';
 
@@ -31,27 +28,8 @@
 	const scale = new Tween(1);
 	let show = $state(true);
 
-	let showMultiplier = $state(props.win.mult > 1);
-
-	// update showMultiplier
 	onMount(async () => {
-		await waitForTimeout(SECOND / stateBetDerived.timeScale());
-		showMultiplier = false;
-	});
-
-	// update scale
-	onMount(async () => {
-		if (showMultiplier) {
-			await waitForTimeout(SECOND);
-			context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_combine_a' });
-			await scale.set(0.1, { duration: 200 / stateBetDerived.timeScale() });
-			await scale.set(1, { duration: 200 / stateBetDerived.timeScale() });
-		}
-	});
-
-	// update y
-	onMount(async () => {
-		await y.set(-SYMBOL_SIZE, { duration: (SECOND * 2) / stateBetDerived.timeScale() });
+		await y.set(-SYMBOL_SIZE * 0.45, { duration: (SECOND * 1.2) / stateBetDerived.timeScale() });
 		show = false;
 	});
 </script>
@@ -62,17 +40,30 @@
 		if (!show) props.win.oncomplete();
 	}}
 >
-	<BitmapText
+	<Container
 		x={SYMBOL_SIZE * (props.win.reel + 0.5)}
 		y={SYMBOL_SIZE * (props.win.row - 0.5) + y.current}
-		scale={scale.current}
-		text={showMultiplier
-			? `${bookEventAmountToCurrencyString(props.win.win)} X ${props.win.mult}`
-			: bookEventAmountToCurrencyString(props.win.result)}
-		anchor={0.5}
-		style={{
-			fontFamily: 'gold',
-			fontSize: SYMBOL_SIZE * 0.5,
-		}}
-	/>
+		scale={{ x: scale.current, y: scale.current }}
+	>
+		<Rectangle
+			width={84}
+			height={28}
+			borderRadius={8}
+			backgroundColor={0x080f18}
+			backgroundAlpha={0.92}
+			borderColor={0xffd700}
+			borderWidth={1.5}
+			anchor={0.5}
+		/>
+		<Text
+			text={bookEventAmountToCurrencyString(props.win.result)}
+			anchor={0.5}
+			style={{
+				fontFamily: 'system-ui, -apple-system, sans-serif',
+				fontSize: 13,
+				fontWeight: '800',
+				fill: 0xffe066,
+			}}
+		/>
+	</Container>
 </FadeContainer>

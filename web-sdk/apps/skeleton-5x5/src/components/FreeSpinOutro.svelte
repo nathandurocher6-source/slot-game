@@ -8,105 +8,143 @@
 </script>
 
 <script lang="ts">
-	import { Sprite, SpineProvider, SpineTrack, SpineSlot } from 'pixi-svelte';
-	import { FadeContainer, WinCountUpProvider, ResponsiveBitmapText } from 'components-pixi';
+	import { CanvasSizeRectangle, MainContainer, OnPressFullScreen } from 'components-layout';
+	import { OnHotkey } from 'components-shared';
+	import { FadeContainer } from 'components-pixi';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 	import { waitForResolve } from 'utils-shared/wait';
-	import { CanvasSizeRectangle } from 'components-layout';
-	import { OnMount } from 'components-shared';
-	import { stateUrlDerived } from 'state-shared';
+	import { Container, Rectangle, Text } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
-	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
-	import PressToContinue from './PressToContinue.svelte';
-	import WinCoins from './WinCoins.svelte';
-
-	type AnimationName = 'intro' | 'idle';
 
 	const context = getContext();
 
-	let show = $state(true);
-	let animationName = $state<AnimationName>('intro');
+	let show = $state(false);
 	let amount = $state(0);
-	let winLevelData = $state<WinLevelData>();
 	let oncomplete = $state(() => {});
-	let onCountUpComplete = $state(() => {});
 
 	context.eventEmitter.subscribeOnMount({
 		freeSpinOutroShow: () => (show = true),
 		freeSpinOutroHide: async () => (show = false),
 		freeSpinOutroCountUp: async (emitterEvent) => {
 			amount = emitterEvent.amount;
-			winLevelData = emitterEvent.winLevelData;
 			await waitForResolve((resolve) => (oncomplete = resolve));
 		},
 	});
+
+	const continueAction = () => {
+		oncomplete();
+	};
+
+	const canvasSizes = $derived(context.stateLayoutDerived.canvasSizes());
+	const CARD_WIDTH = $derived(Math.min(canvasSizes.width * 0.88, 540));
+	const CARD_HEIGHT = 240;
 </script>
 
 <FadeContainer {show}>
-	{#if winLevelData}
-		{@const duration = winLevelData.presentDuration}
-		{@const isBigWin = winLevelData.type === 'big'}
-		<WinCountUpProvider {amount} {duration} oncomplete={() => onCountUpComplete()}>
-			{#snippet children({ countUpAmount, startCountUp, finishCountUp, countUpCompleted })}
-				<OnMount onmount={() => startCountUp()} />
+	<!-- Dark Screen Blur Backdrop -->
+	<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.82} zIndex={100} />
 
-				<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} />
+	<!-- Fullscreen Click & Hotkey Handling -->
+	<OnHotkey hotkey="Space" onpress={continueAction} />
+	<OnHotkey hotkey="Enter" onpress={continueAction} />
+	<OnPressFullScreen onpress={continueAction} />
 
-				<FreeSpinAnimation>
-					{#snippet children({ sizes })}
-						{#if isBigWin}
-							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 2.2}
-								height={156 * 2.2}
-								key="freespins_{stateUrlDerived.lang()}.png"
-							/>
-						{:else}
-							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 4.5}
-								height={80 * 4.5}
-								key="winsmall_{stateUrlDerived.lang()}.png"
-							/>
-						{/if}
+	<MainContainer>
+		<Container
+			x={context.stateGameDerived.boardLayout().x}
+			y={context.stateGameDerived.boardLayout().y}
+			zIndex={101}
+		>
+			<!-- Glow Accent -->
+			<Rectangle
+				width={CARD_WIDTH + 14}
+				height={CARD_HEIGHT + 14}
+				borderRadius={28}
+				backgroundColor={0xffa500}
+				backgroundAlpha={0.25}
+				borderColor={0xffd700}
+				borderWidth={2}
+				anchor={0.5}
+			/>
 
-						<SpineProvider key="fsOutroNumber" width={sizes.width * 0.4}>
-							<SpineTrack
-								trackIndex={0}
-								{animationName}
-								loop={animationName === 'idle'}
-								listener={{
-									complete: () => (animationName = 'idle'),
-								}}
-							/>
-							<SpineSlot slotName="slot_number">
-								<ResponsiveBitmapText
-									anchor={{ x: 0.5, y: 0.5 }}
-									style={{
-										fontFamily: 'gold',
-										fontSize: sizes.width * 0.15,
-									}}
-									text={bookEventAmountToCurrencyString(countUpAmount)}
-									maxWidth={sizes.width}
-								/>
-							</SpineSlot>
-						</SpineProvider>
+			<!-- Modal Card Base -->
+			<Rectangle
+				width={CARD_WIDTH}
+				height={CARD_HEIGHT}
+				borderRadius={22}
+				backgroundColor={0x181206}
+				backgroundAlpha={0.96}
+				borderColor={0xffd700}
+				borderWidth={2.5}
+				anchor={0.5}
+			/>
 
-						<Sprite
-							y={0}
-							anchor={{ x: 0.5, y: isBigWin ? -3.2 : -2 }}
-							width={177 * (isBigWin ? 2.2 : 3)}
-							height={42 * (isBigWin ? 2.2 : 3)}
-							key="totalwin.png"
-						/>
-					{/snippet}
-				</FreeSpinAnimation>
+			<!-- Header Badge -->
+			<Rectangle
+				y={-CARD_HEIGHT * 0.5 + 26}
+				width={260}
+				height={32}
+				borderRadius={8}
+				backgroundColor={0x332205}
+				borderColor={0xffd700}
+				borderWidth={1.5}
+				anchor={0.5}
+			/>
 
-				<WinCoins emit={!countUpCompleted} levelAlias={winLevelData?.alias} />
+			<Text
+				y={-CARD_HEIGHT * 0.5 + 26}
+				text="BONUS COMPLETED"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 14,
+					fontWeight: '900',
+					fill: 0xffd700,
+					letterSpacing: 2,
+				}}
+			/>
 
-				<PressToContinue onpress={() => (countUpCompleted ? oncomplete() : finishCountUp())} />
-			{/snippet}
-		</WinCountUpProvider>
-	{/if}
+			<!-- Total Amount Won -->
+			<Text
+				y={-6}
+				text={bookEventAmountToCurrencyString(amount)}
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 42,
+					fontWeight: '900',
+					fill: 0xffffff,
+				}}
+			/>
+
+			<!-- Subtitle -->
+			<Text
+				y={40}
+				text="TOTAL FREE SPINS PAYOUT"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 12,
+					fontWeight: '700',
+					fill: 0xffd066,
+					letterSpacing: 1.2,
+				}}
+			/>
+
+			<!-- Continue prompt -->
+			<Text
+				y={CARD_HEIGHT * 0.5 - 20}
+				text="CLICK OR PRESS SPACE TO COLLECT"
+				anchor={0.5}
+				style={{
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					fontSize: 11,
+					fontWeight: '700',
+					fill: 0x94a3b8,
+					letterSpacing: 1.5,
+				}}
+			/>
+		</Container>
+	</MainContainer>
 </FadeContainer>

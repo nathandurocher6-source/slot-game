@@ -1,26 +1,21 @@
 <script lang="ts">
-	import { SpineProvider, SpineTrack } from 'pixi-svelte';
-	import { getContext } from '../game/context';
+	import { onMount } from 'svelte';
+	import { CanvasSizeRectangle } from 'components-layout';
+	import { Tween } from 'svelte/motion';
+	import { cubicInOut } from 'svelte/easing';
 
 	type Props = {
 		oncomplete: () => void;
 	};
 
 	const props: Props = $props();
-	const context = getContext();
+	const alpha = new Tween(0);
+
+	onMount(async () => {
+		await alpha.set(0.9, { duration: 150, easing: cubicInOut });
+		props.oncomplete?.();
+		await alpha.set(0, { duration: 150, easing: cubicInOut });
+	});
 </script>
 
-<SpineProvider
-	key="transition"
-	x={context.stateLayoutDerived.canvasSizes().width * 0.5}
-	y={context.stateLayoutDerived.canvasSizes().height * 0.5}
-	height={context.stateLayoutDerived.canvasSizes().height * 1.7}
->
-	<SpineTrack
-		trackIndex={0}
-		animationName={'animation'}
-		listener={{
-			complete: props.oncomplete,
-		}}
-	/>
-</SpineProvider>
+<CanvasSizeRectangle backgroundColor={0x080b10} backgroundAlpha={alpha.current} zIndex={200} />

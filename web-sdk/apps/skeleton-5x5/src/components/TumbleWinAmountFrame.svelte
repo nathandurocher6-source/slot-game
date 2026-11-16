@@ -1,42 +1,55 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-
-	import { BitmapText, Container, Sprite, type Sizes } from 'pixi-svelte';
-
-	import { SYMBOL_SIZE } from '../game/constants';
+	import { Container, Rectangle, Text, type Sizes } from 'pixi-svelte';
 
 	type Props = {
 		children: Snippet<[{ frameSizes: Sizes }]>;
 	};
 
 	const props: Props = $props();
-	const TITLE_KEY = 'Frame_TumbleWin.png';
-	const TITLE_RATIO = 532 / 143;
-	const TITLE_HEIGHT = SYMBOL_SIZE * 0.28;
-	const TITLE_SIZES = {
-		width: TITLE_HEIGHT * TITLE_RATIO,
-		height: TITLE_HEIGHT,
-	};
-
-	const PANEL_KEY = 'Frame_Tumble.png';
-	const PANEL_RATIO = 1442 / 374;
-	const PANEL_HEIGHT = SYMBOL_SIZE * 0.8;
 	const PANEL_SIZES = {
-		width: PANEL_HEIGHT * PANEL_RATIO,
-		height: PANEL_HEIGHT,
+		width: 220,
+		height: 52,
 	};
 </script>
 
-<Sprite anchor={0.5} key={PANEL_KEY} {...PANEL_SIZES} />
-
-<Container y={-TITLE_HEIGHT * 1.2}>
-	<Sprite anchor={0.5} key={TITLE_KEY} {...TITLE_SIZES} />
-	<BitmapText
+<Container>
+	<!-- Outer Frame -->
+	<Rectangle
+		width={PANEL_SIZES.width}
+		height={PANEL_SIZES.height}
+		borderRadius={12}
+		backgroundColor={0x0c131c}
+		backgroundAlpha={0.95}
+		borderColor={0x2b3d56}
+		borderWidth={1.5}
 		anchor={0.5}
-		y={-TITLE_HEIGHT * 0.025}
-		text="TUMBLE WIN"
-		style={{ fontFamily: 'gold', fontSize: TITLE_HEIGHT * 0.45 }}
 	/>
-</Container>
 
-{@render props.children({ frameSizes: PANEL_SIZES })}
+	<!-- Header Badge -->
+	<Rectangle
+		y={-PANEL_SIZES.height * 0.5}
+		width={110}
+		height={18}
+		borderRadius={6}
+		backgroundColor={0x162436}
+		borderColor={0x2b3d56}
+		borderWidth={1}
+		anchor={0.5}
+	/>
+
+	<Text
+		y={-PANEL_SIZES.height * 0.5}
+		text="TUMBLE WIN"
+		anchor={0.5}
+		style={{
+			fontFamily: 'system-ui, -apple-system, sans-serif',
+			fontSize: 9,
+			fontWeight: '800',
+			fill: 0x64b5f6,
+			letterSpacing: 1,
+		}}
+	/>
+
+	{@render props.children({ frameSizes: PANEL_SIZES })}
+</Container>

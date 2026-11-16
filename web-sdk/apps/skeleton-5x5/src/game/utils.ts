@@ -67,5 +67,6 @@ export const getSymbolInfo = ({
 	state: SymbolState;
 }) => {
 	const symbolKey = getSymbolKey({ rawSymbol });
-	return SYMBOL_INFO_MAP[symbolKey][state];
+	const mapEntry = (SYMBOL_INFO_MAP as Record<string, any>)[symbolKey] ?? (SYMBOL_INFO_MAP as Record<string, any>)['L1'];
+	return mapEntry?.[state] ?? mapEntry?.['static'] ?? { type: 'sprite', assetKey: 'l1.webp', sizeRatios: { width: 1, height: 1 } };
 };

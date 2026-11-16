@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Symbol from './Symbol.svelte';
 	import SymbolWrap from './SymbolWrap.svelte';
-	import { getSymbolInfo, getSymbolX } from '../game/utils';
+	import { getSymbolX } from '../game/utils';
 	import type { ReelSymbol } from '../game/stateGame.svelte';
 
 	type Props = {
@@ -10,16 +10,12 @@
 	};
 
 	const props: Props = $props();
-	const symbolInfo = $derived(
-		getSymbolInfo({ rawSymbol: props.reelSymbol.rawSymbol, state: props.reelSymbol.symbolState }),
-	);
 </script>
 
 <SymbolWrap
 	x={getSymbolX(props.reelIndex)}
 	y={props.reelSymbol.symbolY.current}
-	animating={symbolInfo.type === 'spine' &&
-		(props.reelSymbol.symbolState === 'land' || props.reelSymbol.symbolState === 'win')}
+	animating={props.reelSymbol.symbolState === 'land' || props.reelSymbol.symbolState === 'win'}
 >
 	<Symbol
 		state={props.reelSymbol.symbolState}

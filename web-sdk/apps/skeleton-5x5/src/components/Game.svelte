@@ -84,27 +84,26 @@
 
 		<UI>
 			{#snippet gameName()}
-				<UiGameName name="CLUSTER GAME" />
+				<UiGameName name="SKELETON 5X5" />
 			{/snippet}
 			{#snippet logo()}
 				<Text
 					anchor={{ x: 1, y: 0 }}
-					text="ADD YOUR LOGO"
+					text="GREYBOX STUDIO"
 					style={{
-						fontFamily: 'proxima-nova',
-						fontSize: REM * 1.5,
-						fontWeight: '600',
+						fontFamily: 'system-ui, -apple-system, sans-serif',
+						fontSize: REM * 1.3,
+						fontWeight: '700',
 						lineHeight: REM * 2,
-						fill: 0xffffff,
+						fill: 0x94a3b8,
+						letterSpacing: 1.5,
 					}}
 				/>
 			{/snippet}
 		</UI>
 		<Win />
 		<FreeSpinIntro />
-		{#if ['desktop', 'landscape'].includes(context.stateLayoutDerived.layoutType())}
-			<FreeSpinCounter />
-		{/if}
+		<FreeSpinCounter />
 		<FreeSpinOutro />
 		<Transition />
 

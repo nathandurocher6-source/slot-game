@@ -24,12 +24,14 @@
 	});
 
 	const boardLayout = $derived(context.stateGameDerived.boardLayout());
+	const scale = $derived(boardLayout.scale ?? 1);
 	const reelX = $derived(
-		boardLayout.x - boardLayout.width * 0.5 + (props.reel.reelIndex + REEL_PADDING) * SYMBOL_SIZE,
+		boardLayout.x +
+			(-boardLayout.width * 0.5 + (props.reel.reelIndex + REEL_PADDING) * SYMBOL_SIZE) * scale,
 	);
 </script>
 
-<Container x={reelX} y={boardLayout.y} alpha={alpha.current}>
+<Container x={reelX} y={boardLayout.y} scale={scale} alpha={alpha.current}>
 	<!-- Glowing Anticipation Column Frame -->
 	<Rectangle
 		width={SYMBOL_SIZE - 4}

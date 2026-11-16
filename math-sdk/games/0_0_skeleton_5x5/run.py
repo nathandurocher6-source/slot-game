@@ -17,14 +17,14 @@ if __name__ == "__main__":
     profiling = False
 
     num_sim_args = {
-        "base": 1000,
-        "bonus_booster": 1000,
-        "bonus_buy": 1000,
+        "base": 3000,
+        "bonus_booster": 3000,
+        "bonus_buy": 3000,
     }
 
     run_conditions = {
         "run_sims": True,
-        "run_optimization": False,
+        "run_optimization": True,
         "run_analysis": True,
         "run_format_checks": True,
     }

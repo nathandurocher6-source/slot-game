@@ -1,5 +1,6 @@
 import { API_AMOUNT_MULTIPLIER } from 'constants-shared/bet';
 import { stateUrlDerived } from 'state-shared';
+import simulatedBooksPool from '../stories/data/simulated_books_pool.json';
 import extracted from '../stories/data/extracted_books.json';
 
 // Local persistent simulated casino wallet
@@ -28,11 +29,29 @@ export const initMockRgs = () => {
 	const originalFetch = window.fetch.bind(window);
 
 	window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-		const urlString =
+		const rawUrl =
 			typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+		const urlString = String(rawUrl || '').toLowerCase();
 
-		// 1. /wallet/authenticate
-		if (urlString.includes('/wallet/authenticate')) {
+		// Helper to identify RGS route types regardless of origin (https://wallet/play, http://localhost:3005/wallet/play, /wallet/play, etc.)
+		const isAuthenticate = urlString.includes('authenticate');
+		const isEndRound = urlString.includes('end-round');
+		const isEvent = urlString.includes('event') && !urlString.includes('authenticate') && !urlString.includes('play');
+		const isReplay = urlString.includes('replay');
+		const isPlay =
+			!isAuthenticate &&
+			!isEndRound &&
+			!isEvent &&
+			!isReplay &&
+			(urlString.includes('/wallet/play') ||
+				urlString.includes('wallet/play') ||
+				urlString.includes('/play') ||
+				urlString.includes('/wallet/bet') ||
+				urlString.includes('wallet/bet') ||
+				urlString.includes('/bet'));
+
+		// 1. Authenticate (/wallet/authenticate)
+		if (isAuthenticate) {
 			const body = {
 				balance: {
 					amount: Math.round(mockBalanceDollars * API_AMOUNT_MULTIPLIER),
@@ -76,12 +95,12 @@ export const initMockRgs = () => {
 			});
 		}
 
-		// 2. /wallet/bet
-		if (urlString.includes('/wallet/bet')) {
+		// 2. Play / Bet (/wallet/play or /wallet/bet)
+		if (isPlay) {
 			let parsedBody: Record<string, any> = {};
 			try {
 				if (init?.body) {
-					parsedBody = JSON.parse(init.body as string);
+					parsedBody = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
 				}
 			} catch {
 				parsedBody = {};
@@ -108,36 +127,34 @@ export const initMockRgs = () => {
 			// Deduct wager
 			mockBalanceDollars = Math.max(0, mockBalanceDollars - totalCostDollars);
 
-			// Choose round events
-			let chosenScenario: { events: any[]; payout?: number };
+			// Choose round events from the real simulated & Rust-optimized statistical pool
+			const poolData = simulatedBooksPool as Record<string, any[]>;
+			let pool = poolData.base ?? [];
 			if (rawMode.includes('buy')) {
-				// Guaranteed 10 Free Spins
-				chosenScenario = extracted.freeSpinsRound;
+				pool = poolData.bonus_buy ?? pool;
 			} else if (rawMode.includes('booster')) {
-				// Elevated bonus trigger chance: 50% Free Spins, 50% Tumble Mult
-				chosenScenario = spinCounter % 2 === 0 ? extracted.freeSpinsRound : extracted.tumbleMultRound;
-			} else {
-				// Base game cycle: 1: tumbleMult, 2: loss, 3: freeSpins, 4: loss
-				const cycle = spinCounter % 4;
-				if (cycle === 0) chosenScenario = extracted.tumbleMultRound;
-				else if (cycle === 2) chosenScenario = extracted.freeSpinsRound;
-				else chosenScenario = extracted.losingRound;
+				pool = poolData.bonus_booster ?? pool;
 			}
+
+			// Random pick from the weighted 500-spin pool
+			const chosenBook =
+				pool.length > 0
+					? pool[Math.floor(Math.random() * pool.length)]
+					: extracted.tumbleMultRound;
+
 			spinCounter++;
 
-			// Calculate payout
-			// Book amounts are in cents (100 = 1x bet)
-			const fsEnd = chosenScenario.events.find((e: any) => e.type === 'freeSpinEnd');
-			const setWins = chosenScenario.events.filter((e: any) => e.type === 'setWin');
-			const finalWin = chosenScenario.events.find((e: any) => e.type === 'finalWin');
-
+			// Calculate payout (amounts in books are in cents, where 100 = 1.0x base bet)
 			let bookWinTotal = 0;
-			if (fsEnd?.amount) {
-				bookWinTotal = fsEnd.amount;
-			} else if (finalWin?.amount) {
-				bookWinTotal = finalWin.amount;
-			} else if (setWins.length > 0) {
-				bookWinTotal = setWins[setWins.length - 1].amount;
+			if (typeof chosenBook.payoutMultiplier === 'number') {
+				bookWinTotal = chosenBook.payoutMultiplier;
+			} else {
+				const fsEnd = chosenBook.events.find((e: any) => e.type === 'freeSpinEnd');
+				const finalWin = chosenBook.events.find((e: any) => e.type === 'finalWin');
+				const setWins = chosenBook.events.filter((e: any) => e.type === 'setWin');
+				if (fsEnd?.amount) bookWinTotal = fsEnd.amount;
+				else if (finalWin?.amount) bookWinTotal = finalWin.amount;
+				else if (setWins.length > 0) bookWinTotal = setWins[setWins.length - 1].amount;
 			}
 
 			const payoutMultiplier = bookWinTotal / 100;
@@ -145,6 +162,9 @@ export const initMockRgs = () => {
 
 			// Hold win for /wallet/end-round
 			pendingWinDollars = totalWinDollars;
+
+			// Deep clone events to ensure each round runs cleanly
+			const clonedState = JSON.parse(JSON.stringify(chosenBook.events));
 
 			const responseData = {
 				balance: {
@@ -158,7 +178,7 @@ export const initMockRgs = () => {
 					payoutMultiplier,
 					active: false,
 					mode: parsedBody.mode || 'BASE',
-					state: chosenScenario.events,
+					state: clonedState,
 				},
 			};
 
@@ -168,8 +188,8 @@ export const initMockRgs = () => {
 			});
 		}
 
-		// 3. /wallet/end-round
-		if (urlString.includes('/wallet/end-round')) {
+		// 3. End Round (/wallet/end-round)
+		if (isEndRound) {
 			mockBalanceDollars += pendingWinDollars;
 			pendingWinDollars = 0;
 
@@ -187,14 +207,38 @@ export const initMockRgs = () => {
 			);
 		}
 
-		// 4. /bet/event
-		if (urlString.includes('/bet/event')) {
+		// 4. Bet Event (/bet/event)
+		if (isEvent) {
 			return new Response(JSON.stringify({ success: true }), {
 				status: 200,
 				headers: { 'Content-Type': 'application/json' },
 			});
 		}
 
+		// 5. Replay (/bet/replay)
+		if (isReplay) {
+			return new Response(
+				JSON.stringify({
+					betID: 1,
+					amount: 1000000,
+					payout: 0,
+					payoutMultiplier: 0,
+					active: false,
+					mode: 'BASE',
+					state: extracted.tumbleMultRound.events,
+				}),
+				{
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
+		}
+
 		return originalFetch(input, init);
 	};
 };
+
+// Immediate module-level self-initialization when running in browser
+if (typeof window !== 'undefined') {
+	initMockRgs();
+}

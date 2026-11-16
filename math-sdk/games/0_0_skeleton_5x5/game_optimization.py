@@ -25,9 +25,9 @@ class OptimizationSetup:
                     ).return_dict(),
                     "0": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(
-                        rtp=0.40, hr=150, search_conditions={"symbol": "scatter"}
+                        rtp=0.38, hr=200, search_conditions={"symbol": "scatter"}
                     ).return_dict(),
-                    "basegame": ConstructConditions(hr=3.5, rtp=0.5599).return_dict(),
+                    "basegame": ConstructConditions(hr=3.6, rtp=0.5799).return_dict(),
                 },
                 "scaling": ConstructScaling(
                     [
@@ -38,12 +38,12 @@ class OptimizationSetup:
                     ]
                 ).return_dict(),
                 "parameters": ConstructParameters(
-                    num_show=5000,
-                    num_per_fence=10000,
+                    num_show=1000,
+                    num_per_fence=2000,
                     min_m2m=4,
                     max_m2m=8,
                     pmb_rtp=1.0,
-                    sim_trials=5000,
+                    sim_trials=1000,
                     test_spins=[50, 100, 200],
                     test_weights=[0.3, 0.4, 0.3],
                     score_type="rtp",
@@ -61,9 +61,9 @@ class OptimizationSetup:
                     ).return_dict(),
                     "0": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(
-                        rtp=0.50, hr=40, search_conditions={"symbol": "scatter"}
+                        rtp=0.60, hr=50, search_conditions={"symbol": "scatter"}
                     ).return_dict(),
-                    "basegame": ConstructConditions(hr=3.0, rtp=0.4599).return_dict(),
+                    "basegame": ConstructConditions(hr=3.3, rtp=0.3599).return_dict(),
                 },
                 "scaling": ConstructScaling(
                     [
@@ -72,12 +72,12 @@ class OptimizationSetup:
                     ]
                 ).return_dict(),
                 "parameters": ConstructParameters(
-                    num_show=5000,
-                    num_per_fence=10000,
+                    num_show=1000,
+                    num_per_fence=2000,
                     min_m2m=4,
                     max_m2m=8,
                     pmb_rtp=1.0,
-                    sim_trials=5000,
+                    sim_trials=1000,
                     test_spins=[50, 100, 200],
                     test_weights=[0.3, 0.4, 0.3],
                     score_type="rtp",
@@ -103,12 +103,12 @@ class OptimizationSetup:
                     ]
                 ).return_dict(),
                 "parameters": ConstructParameters(
-                    num_show=5000,
-                    num_per_fence=10000,
+                    num_show=1000,
+                    num_per_fence=2000,
                     min_m2m=4,
                     max_m2m=8,
                     pmb_rtp=1.0,
-                    sim_trials=5000,
+                    sim_trials=1000,
                     test_spins=[50, 100, 200],
                     test_weights=[0.3, 0.4, 0.3],
                     score_type="rtp",

@@ -88,13 +88,33 @@ export const stateGame = $state({
 	scatterCounter: 0,
 });
 
-const boardLayout = () => ({
-	x: stateLayoutDerived.mainLayout().width * 0.5,
-	y: stateLayoutDerived.mainLayout().height * 0.5,
-	anchor: { x: 0.5, y: 0.5 },
-	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
-	...BOARD_SIZES,
-});
+const boardLayout = () => {
+	const layoutType = stateLayoutDerived.layoutType();
+	const main = stateLayoutDerived.mainLayout();
+
+	let yRatio = 0.4;
+	let scale = 0.85;
+
+	if (layoutType === 'portrait') {
+		yRatio = 0.32;
+		scale = 0.95;
+	} else if (layoutType === 'tablet') {
+		yRatio = 0.42;
+		scale = 0.9;
+	} else if (layoutType === 'landscape') {
+		yRatio = 0.43;
+		scale = 0.88;
+	}
+
+	return {
+		x: main.width * 0.5,
+		y: main.height * yRatio,
+		scale,
+		anchor: { x: 0.5, y: 0.5 },
+		pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
+		...BOARD_SIZES,
+	};
+};
 
 const boardRaw = () =>
 	board.map((reel) => reel.reelState.symbols.map((reelSymbol) => reelSymbol.rawSymbol));

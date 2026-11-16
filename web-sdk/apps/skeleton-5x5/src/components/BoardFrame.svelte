@@ -27,7 +27,7 @@
 	const FRAME_HEIGHT = $derived(boardLayout.height + FRAME_PADDING * 2);
 </script>
 
-<Container x={boardLayout.x} y={boardLayout.y}>
+<Container x={boardLayout.x} y={boardLayout.y} scale={boardLayout.scale ?? 1}>
 	<!-- Glow Aura (Active in Free Spins) -->
 	{#if glowActive}
 		<Rectangle

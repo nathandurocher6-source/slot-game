@@ -1,0 +1,70 @@
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Node & PNPM
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+.pnpm-bin/
+pnpm-lock.yaml.bak
+
+# SvelteKit & Vite & Turbo
+.svelte-kit/
+dist/
+build/
+.turbo/
+storybook-static/
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.python-3.12
+.python-3.12/
+.bin
+.bin/
+.pnpm-bin
+.pnpm-bin/
+*.egg-info/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Rust & Cargo
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Simulation outputs & heavy generated datasets
+math-sdk/games/**/library/books/*.jsonl
+math-sdk/games/**/library/books/*.zst
+math-sdk/games/**/library/forces/
+math-sdk/games/**/library/luts/
+math-sdk/games/**/library/configs/*.verification.json
+math-sdk/games/**/library/configs/*.parsheet.json
+math-sdk/games/**/library/configs/*.parsheet.xlsx
+math-sdk/games/**/stats/
+math-sdk/uploads/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local

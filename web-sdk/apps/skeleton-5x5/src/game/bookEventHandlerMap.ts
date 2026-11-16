@@ -65,12 +65,16 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 			await eventEmitter.broadcastAsync({
 				type: 'showClusterWinAmounts',
 				wins: bookEvent.wins.map((win) => {
+					const overlayReel = win.meta?.overlay?.reel ?? win.positions?.[0]?.reel ?? 2;
+					const overlayRow = win.meta?.overlay?.row ?? win.positions?.[0]?.row ?? 2;
+					const winWithoutMult = win.meta?.winWithoutMult ?? win.win ?? 0;
+					const globalMult = win.meta?.globalMult ?? 1;
 					return {
-						win: win.meta.winWithoutMult,
-						mult: win.meta.globalMult,
-						result: win.meta.winWithoutMult * win.meta.globalMult,
-						reel: win.meta.overlay.reel,
-						row: win.meta.overlay.row,
+						win: winWithoutMult,
+						mult: globalMult,
+						result: winWithoutMult * globalMult,
+						reel: overlayReel,
+						row: overlayRow,
 					};
 				}),
 			});

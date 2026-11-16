@@ -8,12 +8,14 @@
 </script>
 
 <script lang="ts">
-	import { CanvasSizeRectangle, MainContainer, OnPressFullScreen } from 'components-layout';
+	import { onDestroy } from 'svelte';
+	import { CanvasSizeRectangle, MainContainer } from 'components-layout';
 	import { OnHotkey } from 'components-shared';
 	import { FadeContainer } from 'components-pixi';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 	import { waitForResolve } from 'utils-shared/wait';
 	import { Container, Rectangle, Text } from 'pixi-svelte';
+	import { stateBet } from 'state-shared';
 
 	import { getContext } from '../game/context';
 
@@ -21,20 +23,81 @@
 
 	let show = $state(false);
 	let amount = $state(0);
-	let oncomplete = $state(() => {});
+	let oncomplete = $state<() => void>(() => {});
+	let autoTimeout: ReturnType<typeof setTimeout> | null = null;
+	let hasResolved = false;
+
+	const continueAction = () => {
+		if (hasResolved) return;
+		hasResolved = true;
+
+		if (autoTimeout) {
+			clearTimeout(autoTimeout);
+			autoTimeout = null;
+		}
+
+		removeWindowListeners();
+		oncomplete();
+	};
+
+	const onWindowPointer = () => {
+		if (show) continueAction();
+	};
+
+	const onWindowKey = (e: KeyboardEvent) => {
+		if (show && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape' || e.key === ' ')) {
+			e.preventDefault();
+			continueAction();
+		}
+	};
+
+	const addWindowListeners = () => {
+		if (typeof window !== 'undefined') {
+			window.addEventListener('pointerdown', onWindowPointer, { capture: true });
+			window.addEventListener('keydown', onWindowKey, { capture: true });
+		}
+	};
+
+	const removeWindowListeners = () => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('pointerdown', onWindowPointer, { capture: true });
+			window.removeEventListener('keydown', onWindowKey, { capture: true });
+		}
+	};
+
+	onDestroy(() => {
+		removeWindowListeners();
+		if (autoTimeout) clearTimeout(autoTimeout);
+	});
 
 	context.eventEmitter.subscribeOnMount({
-		freeSpinOutroShow: () => (show = true),
-		freeSpinOutroHide: async () => (show = false),
+		freeSpinOutroShow: () => {
+			show = true;
+			hasResolved = false;
+			addWindowListeners();
+		},
+		freeSpinOutroHide: async () => {
+			show = false;
+			removeWindowListeners();
+			if (autoTimeout) clearTimeout(autoTimeout);
+		},
 		freeSpinOutroCountUp: async (emitterEvent) => {
 			amount = emitterEvent.amount;
+			hasResolved = false;
+			addWindowListeners();
+
+			// Auto-continue timer for Turbo / Autoplay / Safety fallback
+			const isTurbo = stateBet.isTurbo;
+			const isAuto = context.stateXstateDerived.isAutoBetting();
+			const timeoutDuration = isTurbo ? 450 : isAuto ? 1000 : 3000;
+
+			autoTimeout = setTimeout(() => {
+				continueAction();
+			}, timeoutDuration);
+
 			await waitForResolve((resolve) => (oncomplete = resolve));
 		},
 	});
-
-	const continueAction = () => {
-		oncomplete();
-	};
 
 	const canvasSizes = $derived(context.stateLayoutDerived.canvasSizes());
 	const CARD_WIDTH = $derived(Math.min(canvasSizes.width * 0.88, 540));
@@ -42,19 +105,38 @@
 </script>
 
 <FadeContainer {show}>
-	<!-- Dark Screen Blur Backdrop -->
-	<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.82} zIndex={100} />
+	<!-- Dark Screen Blur Backdrop (Clickable) -->
+	<CanvasSizeRectangle
+		backgroundColor={0x000000}
+		backgroundAlpha={0.82}
+		zIndex={100}
+		eventMode="static"
+		cursor="pointer"
+		onpointerup={continueAction}
+	/>
 
 	<!-- Fullscreen Click & Hotkey Handling -->
 	<OnHotkey hotkey="Space" onpress={continueAction} />
 	<OnHotkey hotkey="Enter" onpress={continueAction} />
-	<OnPressFullScreen onpress={continueAction} />
+
+	<!-- Interactive Transparent Touch Overlay with high z-index -->
+	<CanvasSizeRectangle
+		backgroundColor={0xffffff}
+		backgroundAlpha={0.0001}
+		zIndex={120}
+		eventMode="static"
+		cursor="pointer"
+		onpointerup={continueAction}
+	/>
 
 	<MainContainer>
 		<Container
 			x={context.stateGameDerived.boardLayout().x}
 			y={context.stateGameDerived.boardLayout().y}
-			zIndex={101}
+			zIndex={121}
+			eventMode="static"
+			cursor="pointer"
+			onpointerup={continueAction}
 		>
 			<!-- Glow Accent -->
 			<Rectangle

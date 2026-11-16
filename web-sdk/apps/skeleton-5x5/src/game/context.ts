@@ -2,7 +2,7 @@ import { setContextEventEmitter, getContextEventEmitter } from 'utils-event-emit
 import { setContextXstate, getContextXstate } from 'utils-xstate';
 import { setContextLayout, getContextLayout } from 'utils-layout';
 import { setContextApp, getContextApp } from 'pixi-svelte';
-import { stateMeta } from 'state-shared';
+import { stateMeta, stateBet, stateConfig } from 'state-shared';
 
 import { eventEmitter, type EmitterEvent } from './eventEmitter';
 import { stateXstate, stateXstateDerived } from './stateXstate';
@@ -11,6 +11,7 @@ import { stateApp } from './stateApp';
 
 import { stateGame, stateGameDerived } from './stateGame.svelte';
 import { i18nDerived } from '../i18n/i18nDerived';
+import { initMockRgs } from './mockRgs';
 
 export const initBetModes = () => {
 	const baseMeta = {
@@ -101,7 +102,23 @@ export const initBetModes = () => {
 };
 
 export const setContext = () => {
+	initMockRgs();
 	initBetModes();
+
+	// Baseline defaults for local dev server & Storybook
+	if (!stateBet.currency) stateBet.currency = 'USD';
+	if (stateBet.balanceAmount === 0 || !stateBet.balanceAmount) stateBet.balanceAmount = 10000.0;
+	if (!stateBet.betAmount) stateBet.betAmount = 1.0;
+	if (!stateBet.wageredBetAmount) stateBet.wageredBetAmount = 1.0;
+	if (!stateConfig.betAmountOptions || stateConfig.betAmountOptions.length === 0) {
+		stateConfig.betAmountOptions = [
+			0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0, 100.0,
+		];
+	}
+	if (!stateConfig.betMenuOptions || stateConfig.betMenuOptions.length === 0) {
+		stateConfig.betMenuOptions = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0];
+	}
+
 	setContextEventEmitter<EmitterEvent>({ eventEmitter });
 	setContextXstate({ stateXstate, stateXstateDerived });
 	setContextLayout({ stateLayout, stateLayoutDerived });

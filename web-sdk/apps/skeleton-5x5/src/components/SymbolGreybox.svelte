@@ -3,7 +3,6 @@
 	import { Tween } from 'svelte/motion';
 	import { backOut, cubicIn, cubicOut } from 'svelte/easing';
 	import type { RawSymbol, SymbolState } from '../game/types';
-	import { SYMBOL_SIZE } from '../game/constants';
 
 	type Props = {
 		x?: number;
@@ -26,6 +25,7 @@
 		fontSize: number;
 		isHigh: boolean;
 		isSpecial: boolean;
+		isMultiplier: boolean;
 	};
 
 	const getSymbolStyle = (rawSymbol: RawSymbol): SymbolStyleConfig => {
@@ -45,6 +45,7 @@
 					fontSize: 28,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'L2':
 				return {
@@ -57,6 +58,7 @@
 					fontSize: 28,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'L3':
 				return {
@@ -69,6 +71,7 @@
 					fontSize: 28,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'L4':
 				return {
@@ -81,6 +84,7 @@
 					fontSize: 28,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'L5':
 				return {
@@ -93,6 +97,7 @@
 					fontSize: 28,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 
 			// High Pays (Warm / Neon palette)
@@ -107,6 +112,7 @@
 					fontSize: 28,
 					isHigh: true,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'H2':
 				return {
@@ -119,6 +125,7 @@
 					fontSize: 28,
 					isHigh: true,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'H3':
 				return {
@@ -131,6 +138,7 @@
 					fontSize: 28,
 					isHigh: true,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 			case 'H4':
 				return {
@@ -143,6 +151,7 @@
 					fontSize: 28,
 					isHigh: true,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 
 			// Specials
@@ -157,6 +166,7 @@
 					fontSize: 32,
 					isHigh: true,
 					isSpecial: true,
+					isMultiplier: false,
 				};
 			case 'S':
 				return {
@@ -169,11 +179,12 @@
 					fontSize: 30,
 					isHigh: true,
 					isSpecial: true,
+					isMultiplier: false,
 				};
 			case 'M':
 				return {
-					bg: 0x052412,
-					border: 0x00e676,
+					bg: 0x052a16,
+					border: 0x00ff88,
 					borderWidth: 3,
 					textColor: 0x69f0ae,
 					mainText: mult ? `x${mult}` : 'MULT',
@@ -181,6 +192,7 @@
 					fontSize: mult && mult >= 100 ? 22 : 26,
 					isHigh: true,
 					isSpecial: true,
+					isMultiplier: true,
 				};
 
 			default:
@@ -193,6 +205,7 @@
 					fontSize: 26,
 					isHigh: false,
 					isSpecial: false,
+					isMultiplier: false,
 				};
 		}
 	};
@@ -203,23 +216,29 @@
 
 	const scale = new Tween(1);
 	const alpha = new Tween(1);
+	const flashAlpha = new Tween(0);
+	const sparkleAlpha = new Tween(0);
 
 	$effect(() => {
 		const s = props.state;
 		if (s === 'win') {
+			flashAlpha.set(0.65, { duration: 40 }).then(() => flashAlpha.set(0, { duration: 160 }));
+			sparkleAlpha.set(1.0, { duration: 80 }).then(() => sparkleAlpha.set(0.3, { duration: 140 }));
+
+			const targetScale = style.isMultiplier ? 1.25 : 1.18;
 			scale
-				.set(1.14, { duration: 130, easing: cubicOut })
-				.then(() => scale.set(1.0, { duration: 130, easing: cubicIn }))
+				.set(targetScale, { duration: 120, easing: cubicOut })
+				.then(() => scale.set(1.02, { duration: 100, easing: cubicIn }))
 				.then(() => {
 					props.oncomplete?.();
 				});
 		} else if (s === 'explosion') {
 			scale
-				.set(1.2, { duration: 60, easing: cubicOut })
+				.set(1.3, { duration: 70, easing: cubicOut })
 				.then(() =>
 					Promise.all([
-						scale.set(0, { duration: 140, easing: cubicIn }),
-						alpha.set(0, { duration: 140, easing: cubicIn }),
+						scale.set(0, { duration: 130, easing: cubicIn }),
+						alpha.set(0, { duration: 130, easing: cubicIn }),
 					]),
 				)
 				.then(() => {
@@ -227,17 +246,21 @@
 				});
 		} else if (s === 'land') {
 			scale
-				.set(0.92, { duration: 60, easing: cubicOut })
+				.set(0.9, { duration: 60, easing: cubicOut })
 				.then(() => scale.set(1.0, { duration: 90, easing: backOut }))
 				.then(() => {
 					props.oncomplete?.();
 				});
 		} else if (s === 'spin') {
-			scale.set(0.96, { duration: 50 });
+			scale.set(0.95, { duration: 50 });
 			alpha.set(0.85, { duration: 50 });
+			flashAlpha.set(0);
+			sparkleAlpha.set(0);
 		} else {
 			scale.set(1.0, { duration: 60 });
 			alpha.set(1.0, { duration: 60 });
+			flashAlpha.set(0);
+			sparkleAlpha.set(0);
 		}
 	});
 
@@ -252,16 +275,16 @@
 	scale={{ x: scale.current, y: scale.current }}
 	alpha={alpha.current}
 >
-	<!-- Outer Glow when Winning -->
-	{#if isWinning}
+	<!-- Outer Glow Aura when Winning or Multiplier Bomb -->
+	{#if isWinning || style.isMultiplier}
 		<Rectangle
-			width={TILE_WIDTH + 8}
-			height={TILE_HEIGHT + 8}
-			borderRadius={RADIUS + 4}
-			backgroundColor={style.border}
-			backgroundAlpha={0.35}
-			borderColor={style.textColor}
-			borderWidth={2}
+			width={TILE_WIDTH + 10}
+			height={TILE_HEIGHT + 10}
+			borderRadius={RADIUS + 5}
+			backgroundColor={style.isMultiplier ? 0x00ff88 : style.border}
+			backgroundAlpha={isWinning ? 0.45 : 0.2}
+			borderColor={isWinning ? 0xffffff : style.textColor}
+			borderWidth={isWinning ? 3 : 1.5}
 			anchor={0.5}
 		/>
 	{/if}
@@ -272,8 +295,8 @@
 		height={TILE_HEIGHT}
 		borderRadius={RADIUS}
 		backgroundColor={style.bg}
-		backgroundAlpha={0.92}
-		borderColor={isWinning ? style.textColor : style.border}
+		backgroundAlpha={0.94}
+		borderColor={isWinning ? (style.isMultiplier ? 0xffea00 : 0xffffff) : style.border}
 		borderWidth={isWinning ? style.borderWidth + 1.5 : style.borderWidth}
 		anchor={0.5}
 	/>
@@ -284,8 +307,8 @@
 		width={TILE_WIDTH - 24}
 		height={2.5}
 		borderRadius={2}
-		backgroundColor={style.border}
-		backgroundAlpha={style.isHigh ? 0.8 : 0.4}
+		backgroundColor={style.isMultiplier ? 0x00ff88 : style.border}
+		backgroundAlpha={style.isHigh ? 0.85 : 0.45}
 		anchor={0.5}
 	/>
 
@@ -297,8 +320,8 @@
 		style={{
 			fontFamily: 'system-ui, -apple-system, sans-serif',
 			fontSize: style.fontSize,
-			fontWeight: '800',
-			fill: style.textColor,
+			fontWeight: '900',
+			fill: isWinning && !style.isMultiplier ? 0xffffff : style.textColor,
 			align: 'center',
 		}}
 	/>
@@ -316,6 +339,66 @@
 				fill: isWinning ? 0xffffff : style.textColor,
 				letterSpacing: 1.2,
 			}}
+		/>
+	{/if}
+
+	<!-- Procedural Sparkles on Corners when Winning -->
+	{#if isWinning}
+		<!-- Top-Left Sparkle -->
+		<Rectangle
+			x={-TILE_WIDTH * 0.44}
+			y={-TILE_HEIGHT * 0.44}
+			width={8}
+			height={8}
+			rotation={Math.PI / 4}
+			backgroundColor={0xffffff}
+			backgroundAlpha={sparkleAlpha.current}
+			anchor={0.5}
+		/>
+		<!-- Top-Right Sparkle -->
+		<Rectangle
+			x={TILE_WIDTH * 0.44}
+			y={-TILE_HEIGHT * 0.44}
+			width={8}
+			height={8}
+			rotation={Math.PI / 4}
+			backgroundColor={0xffffff}
+			backgroundAlpha={sparkleAlpha.current}
+			anchor={0.5}
+		/>
+		<!-- Bottom-Left Sparkle -->
+		<Rectangle
+			x={-TILE_WIDTH * 0.44}
+			y={TILE_HEIGHT * 0.44}
+			width={8}
+			height={8}
+			rotation={Math.PI / 4}
+			backgroundColor={0xffffff}
+			backgroundAlpha={sparkleAlpha.current}
+			anchor={0.5}
+		/>
+		<!-- Bottom-Right Sparkle -->
+		<Rectangle
+			x={TILE_WIDTH * 0.44}
+			y={TILE_HEIGHT * 0.44}
+			width={8}
+			height={8}
+			rotation={Math.PI / 4}
+			backgroundColor={0xffffff}
+			backgroundAlpha={sparkleAlpha.current}
+			anchor={0.5}
+		/>
+	{/if}
+
+	<!-- White/Gold Flash Overlay on Win Trigger -->
+	{#if flashAlpha.current > 0.01}
+		<Rectangle
+			width={TILE_WIDTH}
+			height={TILE_HEIGHT}
+			borderRadius={RADIUS}
+			backgroundColor={style.isMultiplier ? 0x00ff88 : 0xffffff}
+			backgroundAlpha={flashAlpha.current}
+			anchor={0.5}
 		/>
 	{/if}
 </Container>

@@ -32,9 +32,13 @@
 		boardWithAnimateSymbols: async ({ symbolPositions }) => {
 			const getPromises = () =>
 				symbolPositions.map(async (position) => {
-					const reelSymbol = context.stateGame.board[position.reel].reelState.symbols[position.row];
+					const reelSymbol = context.stateGame.board[position.reel]?.reelState?.symbols?.[position.row];
+					if (!reelSymbol) return;
 					reelSymbol.symbolState = 'win';
-					await waitForResolve((resolve) => (reelSymbol.oncomplete = resolve));
+					await Promise.race([
+						waitForResolve((resolve) => (reelSymbol.oncomplete = resolve)),
+						new Promise((resolve) => setTimeout(resolve, 350)),
+					]);
 					reelSymbol.symbolState = 'postWinStatic';
 				});
 

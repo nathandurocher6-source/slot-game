@@ -155,3 +155,14 @@
 	})}
 	{template}
 />
+
+<!-- 9. Mode Casino Interactif (Live Spin, Bet +/-, Buy Bonus) -->
+<Story
+	name="9. Mode Casino Interactif (Live Spin, Bet +/-, Buy Bonus)"
+	exportName="ScenarioInteractiveCasino"
+	args={templateArgs({
+		skipLoadingScreen: true,
+		data: {},
+	})}
+	{template}
+/>

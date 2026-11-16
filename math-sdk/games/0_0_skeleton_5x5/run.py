@@ -17,17 +17,18 @@ if __name__ == "__main__":
     profiling = False
 
     num_sim_args = {
-        "base": int(1e4),
-        "bonus": int(1e4),
+        "base": 1000,
+        "bonus_booster": 1000,
+        "bonus_buy": 1000,
     }
 
     run_conditions = {
         "run_sims": True,
-        "run_optimization": True,
+        "run_optimization": False,
         "run_analysis": True,
         "run_format_checks": True,
     }
-    target_modes = ["base", "bonus"]
+    target_modes = ["base", "bonus_booster", "bonus_buy"]
 
     config = GameConfig()
     gamestate = GameState(config)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         generate_configs(gamestate)
 
     if run_conditions["run_analysis"]:
-        custom_keys = [{"symbol": "scatter"}]
+        custom_keys = [{"symbol": "scatter"}, {"symbol": "multiplier"}]
         create_stat_sheet(gamestate, custom_keys=custom_keys)
 
     if run_conditions["run_format_checks"]:

@@ -150,27 +150,40 @@ Chaque partie de jeu correspond à un tableau ordonné d'événements JSON (`eve
 
 ## 3. Configuration Mathématique (`0_0_skeleton_5x5`)
 
-### 3.1 Dimensions et Symboles
+### 3.1 Dimensions, Symboles et Multiplicateurs
 - **Grille** : 5 rouleaux x 5 rangées (`num_reels = 5`, `num_rows = [5, 5, 5, 5, 5]`).
-- **Symboles Réguliers** :
-  - High Pay : `H1`, `H2`, `H3`, `H4`
-  - Low Pay : `L1`, `L2`, `L3`, `L4`
+- **Plafond de Gain (`wincap`)** : `100 000.0x` la mise de base.
+- **RTP Cible** : `96.0%` (`0.96`).
+- **Symboles Réguliers (Sans Thème)** :
+  - **High Pays** : `H1`, `H2`, `H3`, `H4`
+  - **Low Pays** : `L1`, `L2`, `L3`, `L4`, `L5`
 - **Symboles Spéciaux** :
-  - `W` (Wild) : Se substitue aux symboles payants dans les clusters.
-  - `S` (Scatter) : Déclenche les Free Spins (3 Scatters = 10 FS, 4 = 12 FS, 5 = 15 FS).
-- **Mécanique de Paiement** : Cluster Pay (minimum 5 symboles connectés orthogonalement).
+  - `W` (Wild) : Se substitue aux symboles payants dans les clusters (hors `S` et `M`).
+  - `S` (Scatter) : Déclenche les Free Spins (3 Scatters = 10 FS, 4 = 12 FS, 5+ = 15 FS en base ; 3 = 5 FS, 4 = 8 FS, 5+ = 10 FS en retrigger).
+  - `M` (Symbole Multiplicateur) : Atterrit avec des valeurs tirées parmi `[2, 3, 4, 5, 10, 15, 25, 50, 100, 250, 500, 1000]`.
+- **Mécanique de Paiement & Cascades** :
+  - Paiement par **Clusters** (groupes d'au moins 5 symboles identiques connectés horizontalement ou verticalement).
+  - **Tumble / Cascade** : Les symboles gagnants explosent (`explode = True`), les symboles restants tombent par gravité, et de nouveaux symboles chutent depuis le haut de la grille. Les symboles spéciaux (`S` et `M`) ne payant pas en cluster ne sont pas détruits et tombent naturellement.
+  - **Multiplicateurs en Base Game** : À la fin d'une séquence de cascades gagnantes, la somme de tous les multiplicateurs `M` présents sur la grille multiplie le gain total du tumble.
+  - **Multiplicateur Global en Free Spins** : Multiplicateur cumulatif progressif démarrant à x1 qui **ne se réinitialise pas** entre les tours gratuits. Lorsqu'un tour est gagnant et contient un ou plusieurs symboles `M`, leur somme s'ajoute au multiplicateur global qui s'applique au gain du spin.
+  - **Plafond Wincap Immédiat** : Dès que le gain cumulé du round atteint ou dépasse `100 000.0x`, le round s'arrête instantanément, émettant l'événement `wincap`.
 
-### 3.2 BetModes & Optimisation
+### 3.2 Les 3 BetModes Standards
 1. **Mode `base`** :
    - Coût : `1.0x`
-   - RTP Cible : `96.70%`
-   - Wincap : `5000.0x`
-   - Distributions : `wincap` (0.1%), `freegame` (10%), `0` (40%), `basegame` (50%).
-2. **Mode `bonus` (Bonus Buy)** :
-   - Coût : `200x`
-   - RTP Cible : `96.70%`
-   - Wincap : `5000.0x`
-   - Distributions : `wincap` (0.1%), `freegame` (99.9%).
+   - RTP Cible : `96.0%`
+   - Wincap : `100 000.0x`
+   - Distributions : `0` (perte), `basegame` (gains standards), `freegame` (accès naturel bonus), `wincap` (plafond x100 000).
+2. **Mode `bonus_booster` (Feature Spin)** :
+   - Coût : `3.0x`
+   - RTP Cible : `96.0%`
+   - Wincap : `100 000.0x`
+   - Mécanique : Probabilité fortement augmentée d'obtenir des Scatters `S` au spin initial.
+3. **Mode `bonus_buy` (Achat Bonus Direct)** :
+   - Coût : `100.0x` (`is_buybonus = True`)
+   - RTP Cible : `96.0%`
+   - Wincap : `100 000.0x`
+   - Mécanique : Garantie d'apparition d'au moins 3 Scatters `S` dès le premier spin pour accéder directement au mode Free Spins.
 
 ---
 

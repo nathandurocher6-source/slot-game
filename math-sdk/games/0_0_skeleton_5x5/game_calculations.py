@@ -1,3 +1,5 @@
+"""Game calculations for 0_0_skeleton_5x5."""
+
 from src.executables.executables import Executables
 from src.calculations.cluster import Cluster
 from src.calculations.board import Board
@@ -5,38 +7,40 @@ from src.config.config import Config
 
 
 class GameCalculations(Executables):
-    """
-    Overrides the evaluate_clusters() function to account for grid position multipliers in winning positions.
-    """
+    """Cluster calculations and multiplier evaluation for 5x5 skeleton."""
 
-    def evaluate_clusters_with_grid(
+    def evaluate_clusters_5x5(
         self,
         config: Config,
         board: Board,
         clusters: dict,
-        pos_mult_grid: list,
         global_multiplier: int = 1,
-        return_data: dict = {"totalWin": 0, "wins": []},
-    ) -> type:
+        return_data: dict = None,
+    ):
+        """Evaluate orthogonal clusters on the 5x5 board.
+        Winning symbols are marked with explode = True.
+        Multiplier (M) and Scatter (S) symbols never explode.
         """
-        Determine payout amount from cluster, including symbol multiplier and global multiplier value.
-        """
-        total_win = 0
+        if return_data is None:
+            return_data = {"totalWin": 0.0, "wins": []}
+
+        total_win = 0.0
+        special_names = set(config.special_symbols.get("scatter", []) + config.special_symbols.get("multiplier", []))
+
         for sym in clusters:
+            if sym in special_names:
+                continue
+
             for cluster in clusters[sym]:
                 syms_in_cluster = len(cluster)
                 if (syms_in_cluster, sym) in config.paytable:
-                    board_mult = 0
-                    for positions in cluster:
-                        board_mult += pos_mult_grid[positions[0]][positions[1]]
-                    board_mult = max(board_mult, 1)
-                    sym_win = config.paytable[(syms_in_cluster, sym)]
-                    symwin_mult = sym_win * board_mult * global_multiplier
+                    sym_base_win = config.paytable[(syms_in_cluster, sym)]
+                    symwin_mult = sym_base_win
                     total_win += symwin_mult
                     json_positions = [{"reel": p[0], "row": p[1]} for p in cluster]
 
                     central_pos = Cluster.get_central_cluster_position(json_positions)
-                    return_data["wins"] += [
+                    return_data["wins"].append(
                         {
                             "symbol": sym,
                             "clusterSize": syms_in_cluster,
@@ -44,16 +48,28 @@ class GameCalculations(Executables):
                             "positions": json_positions,
                             "meta": {
                                 "globalMult": global_multiplier,
-                                "clusterMult": board_mult,
-                                "winWithoutMult": sym_win,
+                                "clusterMult": 1,
+                                "winWithoutMult": sym_base_win,
                                 "overlay": {"reel": central_pos[0], "row": central_pos[1]},
                             },
                         }
-                    ]
+                    )
 
-                    for positions in cluster:
-                        board[positions[0]][positions[1]].explode = True
+                    for pos in cluster:
+                        board[pos[0]][pos[1]].explode = True
 
         return_data["totalWin"] += total_win
-
         return board, return_data
+
+    def get_board_multiplier_sum(self):
+        """Sum of all multiplier bomb values from M symbols currently visible on board."""
+        total_mult = 0
+        mult_positions = []
+        for reel, _ in enumerate(self.board):
+            for row, _ in enumerate(self.board[reel]):
+                if self.board[reel][row].check_attribute("multiplier"):
+                    val = self.board[reel][row].get_attribute("multiplier")
+                    if val is not None and val > 0:
+                        total_mult += val
+                        mult_positions.append({"reel": reel, "row": row, "value": val})
+        return total_mult, mult_positions

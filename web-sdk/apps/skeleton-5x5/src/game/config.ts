@@ -2,7 +2,7 @@ export default {
 	providerName: 'sample_provider',
 	gameName: 'skeleton_5x5',
 	gameID: '0_0_skeleton_5x5',
-	rtp: 0.97,
+	rtp: 0.96,
 	numReels: 5,
 	numRows: [5, 5, 5, 5, 5],
 	betModes: {
@@ -10,21 +10,36 @@ export default {
 			cost: 1.0,
 			feature: true,
 			buyBonus: false,
-			rtp: 0.97,
-			max_win: 5000.0,
+			rtp: 0.96,
+			max_win: 100000.0,
 		},
-		bonus: {
-			cost: 200,
+		bonus_booster: {
+			cost: 3.0,
 			feature: true,
 			buyBonus: false,
-			rtp: 0.97,
-			max_win: 5000.0,
+			rtp: 0.96,
+			max_win: 100000.0,
+		},
+		bonus_buy: {
+			cost: 100.0,
+			feature: true,
+			buyBonus: true,
+			rtp: 0.96,
+			max_win: 100000.0,
 		},
 	},
 	symbols: {
 		W: {
 			paytable: null,
-			special_properties: ['wild', 'multiplier'],
+			special_properties: ['wild'],
+		},
+		S: {
+			paytable: null,
+			special_properties: ['scatter'],
+		},
+		M: {
+			paytable: null,
+			special_properties: ['multiplier'],
 		},
 		L4: {
 			paytable: [
@@ -325,10 +340,6 @@ export default {
 					'36': 30.0,
 				},
 			],
-		},
-		S: {
-			paytable: null,
-			special_properties: ['scatter'],
 		},
 		H4: {
 			paytable: [
@@ -828,6 +839,31 @@ export default {
 				{
 					'36': 5.0,
 				},
+			],
+		},
+		L5: {
+			paytable: [
+				{ '5': 0.2 },
+				{ '6': 0.5 },
+				{ '7': 0.5 },
+				{ '8': 1.5 },
+				{ '9': 1.5 },
+				{ '10': 1.5 },
+				{ '11': 3.0 },
+				{ '12': 3.0 },
+				{ '13': 3.0 },
+				{ '14': 3.0 },
+				{ '15': 8.0 },
+				{ '16': 8.0 },
+				{ '17': 8.0 },
+				{ '18': 8.0 },
+				{ '19': 8.0 },
+				{ '20': 8.0 },
+				{ '21': 8.0 },
+				{ '22': 8.0 },
+				{ '23': 8.0 },
+				{ '24': 8.0 },
+				{ '25': 8.0 },
 			],
 		},
 	},

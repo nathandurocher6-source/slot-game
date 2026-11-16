@@ -108,6 +108,12 @@ type BookEventCreateBonusSnapshot = {
 	bookEvents: BookEvent[];
 };
 
+type BookEventWincap = {
+	index: number;
+	type: 'wincap';
+	amount: number;
+};
+
 export type BookEvent =
 	| BookEventReveal
 	| BookEventWinInfo
@@ -121,6 +127,7 @@ export type BookEvent =
 	| BookEventFinalWin
 	| BookEventSetWin
 	| BookEventFreeSpinEnd
+	| BookEventWincap
 	// new
 	| BookEventUpdateGrid
 	| BookEventFreeSpinRetrigger

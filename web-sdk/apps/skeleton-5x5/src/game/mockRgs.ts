@@ -1,6 +1,7 @@
 import { API_AMOUNT_MULTIPLIER } from 'constants-shared/bet';
 import { stateUrlDerived } from 'state-shared';
 import simulatedBooksPool from '../stories/data/simulated_books_pool.json';
+import wincapBook from '../stories/data/wincap_book.json';
 import extracted from '../stories/data/extracted_books.json';
 
 // Local persistent simulated casino wallet
@@ -119,15 +120,15 @@ export const initMockRgs = () => {
 
 			const totalCostDollars = betAmountDollars * costMultiplier;
 
-			// If player balance runs out, automatically replenish $5,000 for smooth testing
-			if (mockBalanceDollars < totalCostDollars) {
-				mockBalanceDollars += 5000;
-			}
-
 			// Deduct wager
 			mockBalanceDollars = Math.max(0, mockBalanceDollars - totalCostDollars);
 
 			// Choose round events from the real simulated & Rust-optimized statistical pool
+			const isForcedMaxWin =
+				rawMode.includes('max') ||
+				(typeof window !== 'undefined' &&
+					(window.location.search.includes('maxwin') || window.location.search.includes('wincap')));
+
 			const poolData = simulatedBooksPool as Record<string, any[]>;
 			let pool = poolData.base ?? [];
 			if (rawMode.includes('buy')) {
@@ -136,9 +137,10 @@ export const initMockRgs = () => {
 				pool = poolData.bonus_booster ?? pool;
 			}
 
-			// Random pick from the weighted 500-spin pool
-			const chosenBook =
-				pool.length > 0
+			// Random pick from the weighted 500-spin pool, or wincap if requested
+			const chosenBook = isForcedMaxWin
+				? (wincapBook as any)
+				: pool.length > 0
 					? pool[Math.floor(Math.random() * pool.length)]
 					: extracted.tumbleMultRound;
 

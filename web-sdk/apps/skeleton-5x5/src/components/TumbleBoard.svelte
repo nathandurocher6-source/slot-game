@@ -20,6 +20,7 @@
 	import { backOut } from 'svelte/easing';
 
 	import { BoardContext } from 'components-shared';
+	import { stateBet } from 'state-shared';
 	import { waitForResolve } from 'utils-shared/wait';
 
 	import TumbleBoardBase from './TumbleBoardBase.svelte';
@@ -31,12 +32,14 @@
 	const context = getContext();
 
 	let show = $state(false);
+	let tumbleSymbolIdSeq = 0;
 
 	const createTumbleSymbol = ({ initY, rawSymbol }: { initY: number; rawSymbol: RawSymbol }) => {
 		const symbolY = new Tween(initY);
 		const oncomplete = () => {};
 
 		const tumbleSymbol = $state({
+			id: ++tumbleSymbolIdSeq,
 			symbolY,
 			rawSymbol,
 			symbolState: 'static' as const,
@@ -82,14 +85,22 @@
 			context.stateGame.tumbleBoardBase = [];
 		},
 		tumbleBoardExplode: async ({ explodingPositions }) => {
+			const timeoutMs = stateBet.isTurbo ? 250 : 450;
 			const getPromises = () =>
 				explodingPositions.map(async (position) => {
-					const tumbleSymbol = context.stateGame.tumbleBoardBase[position.reel][position.row];
+					const tumbleSymbol = context.stateGame.tumbleBoardBase[position.reel]?.[position.row];
+					if (!tumbleSymbol) return;
 					tumbleSymbol.symbolState = 'explosion';
-					await waitForResolve((resolve) => (tumbleSymbol.oncomplete = resolve));
+					await Promise.race([
+						waitForResolve((resolve) => (tumbleSymbol.oncomplete = resolve)),
+						new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+					]);
 				});
 
-			await Promise.all(getPromises());
+			await Promise.race([
+				Promise.all(getPromises()),
+				new Promise((resolve) => setTimeout(resolve, timeoutMs + 100)),
+			]);
 		},
 		tumbleBoardRemoveExploded: () => {
 			context.stateGame.tumbleBoardBase.forEach((tumbleReel, reelIndex) => {
@@ -99,35 +110,51 @@
 			});
 		},
 		tumbleBoardSlideDown: async () => {
+			const slideDuration = stateBet.isTurbo ? 100 : 200;
+			const landTimeoutMs = stateBet.isTurbo ? 150 : 250;
+			const totalMaxTimeout = stateBet.isTurbo ? 450 : 700;
+
 			const getPromises = () =>
 				_.flatten(
 					context.stateGameDerived.tumbleBoardCombined().map((tumbleReel) => {
 						return tumbleReel.map(async (tumbleSymbol, symbolIndex) => {
 							const targetY = getSymbolY(symbolIndex - 1); // Refer to initTumbleBoardBase
 							if (targetY !== tumbleSymbol.symbolY.current) {
-								const bounceDuration = 200;
-
-								await tumbleSymbol.symbolY.set(targetY, {
-									duration: bounceDuration,
-									easing: backOut,
-								});
+								await Promise.race([
+									tumbleSymbol.symbolY.set(targetY, {
+										duration: slideDuration,
+										easing: backOut,
+									}),
+									new Promise((resolve) => setTimeout(resolve, slideDuration + 100)),
+								]);
 
 								if (symbolIndex > 0 && symbolIndex < tumbleReel.length - 1) {
 									tumbleSymbol.symbolState = 'land';
 									context.stateGameDerived.onSymbolLand({ rawSymbol: tumbleSymbol.rawSymbol });
-									await waitForResolve((resolve) => {
-										tumbleSymbol.oncomplete = () => {
-											tumbleSymbol.symbolState = 'static';
-											resolve();
-										};
-									});
+									await Promise.race([
+										waitForResolve((resolve) => {
+											tumbleSymbol.oncomplete = () => {
+												tumbleSymbol.symbolState = 'static';
+												resolve();
+											};
+										}),
+										new Promise((resolve) => {
+											setTimeout(() => {
+												tumbleSymbol.symbolState = 'static';
+												resolve(undefined);
+											}, landTimeoutMs);
+										}),
+									]);
 								}
 							}
 						});
 					}),
 				);
 
-			await Promise.all(getPromises());
+			await Promise.race([
+				Promise.all(getPromises()),
+				new Promise((resolve) => setTimeout(resolve, totalMaxTimeout)),
+			]);
 		},
 	});
 </script>

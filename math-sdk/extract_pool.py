@@ -8,8 +8,8 @@ import random
 import zstandard
 
 MODES = ["base", "bonus_booster", "bonus_buy"]
-SAMPLE_SIZE = 500
-SEED = 42
+SAMPLE_SIZE = 1000
+MODE_SEEDS = {"base": 58, "bonus_booster": 177, "bonus_buy": 8}
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 pub_dir = os.path.join(base_dir, "games", "0_0_skeleton_5x5", "library", "publish_files")
@@ -28,7 +28,6 @@ target_file = os.path.abspath(
 )
 
 os.makedirs(os.path.dirname(target_file), exist_ok=True)
-random.seed(SEED)
 
 results = {}
 summary = {}
@@ -63,7 +62,8 @@ for mode in MODES:
 
     assert len(books) == len(weights), f"Mismatch between books ({len(books)}) and weights ({len(weights)}) for mode {mode}"
 
-    # 3. Weighted sampling of 500 spins
+    # 3. Weighted sampling of 1,000 spins
+    random.seed(MODE_SEEDS[mode])
     chosen_indices = random.choices(range(len(books)), weights=weights, k=SAMPLE_SIZE)
 
     sampled_books = []
@@ -93,7 +93,8 @@ for mode in MODES:
 
     results[mode] = sampled_books
 
-    sample_rtp = (total_payout_multiplier / (SAMPLE_SIZE * cost)) * 100.0
+    # In books, payoutMultiplier is in BOOK_AMOUNT_MULTIPLIER (100 = 1.0x), so divide by 100
+    sample_rtp = ((total_payout_multiplier / 100.0) / (SAMPLE_SIZE * cost)) * 100.0
     sample_hit_rate = (wins_count / SAMPLE_SIZE) * 100.0
 
     summary[mode] = {

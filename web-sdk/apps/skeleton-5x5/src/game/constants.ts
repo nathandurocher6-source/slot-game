@@ -51,29 +51,29 @@ const LOW_SYMBOL_SIZE = 0.9;
 const SPECIAL_SYMBOL_SIZE = 1;
 
 const SPIN_OPTIONS_SHARED = {
-	reelFallInDelay: 80,
-	reelPaddingMultiplierNormal: 1.25,
-	reelPaddingMultiplierAnticipated: 18,
-	reelFallOutDelay: 145,
+	reelFallInDelay: 56,
+	reelPaddingMultiplierNormal: 0.95,
+	reelPaddingMultiplierAnticipated: 7,
+	reelFallOutDelay: 95,
 };
 
 export const SPIN_OPTIONS_DEFAULT = {
 	...SPIN_OPTIONS_SHARED,
-	symbolFallInSpeed: 3.5,
-	symbolFallInInterval: 30,
-	symbolFallInBounceSpeed: 0.15,
-	symbolFallInBounceSizeMulti: 0.5,
-	symbolFallOutSpeed: 3.5,
-	symbolFallOutInterval: 20,
+	symbolFallInSpeed: 4.95,
+	symbolFallInInterval: 20,
+	symbolFallInBounceSpeed: 0.22,
+	symbolFallInBounceSizeMulti: 0.35,
+	symbolFallOutSpeed: 4.95,
+	symbolFallOutInterval: 14,
 };
 
 export const SPIN_OPTIONS_FAST = {
 	...SPIN_OPTIONS_SHARED,
-	symbolFallInSpeed: 7,
+	symbolFallInSpeed: 11.5,
 	symbolFallInInterval: 0,
-	symbolFallInBounceSpeed: 0.3,
-	symbolFallInBounceSizeMulti: 0.25,
-	symbolFallOutSpeed: 7,
+	symbolFallInBounceSpeed: 0.48,
+	symbolFallInBounceSizeMulti: 0.18,
+	symbolFallOutSpeed: 11.5,
 	symbolFallOutInterval: 0,
 };
 

@@ -10,7 +10,7 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { backOut, cubicOut } from 'svelte/easing';
 	import { Text, Container, Rectangle } from 'pixi-svelte';
@@ -32,6 +32,14 @@
 	const PILL_WIDTH = $derived(props.win.result >= 10000 ? 104 : 88);
 	const PILL_HEIGHT = 30;
 
+	let isCompleted = false;
+	const completeOnce = () => {
+		if (!isCompleted) {
+			isCompleted = true;
+			props.win.oncomplete();
+		}
+	};
+
 	onMount(async () => {
 		const timeScale = stateBetDerived.timeScale() || 1;
 		const totalDuration = (SECOND * 1.1) / timeScale;
@@ -45,12 +53,16 @@
 		await y.set(-SYMBOL_SIZE * 0.58, { duration: totalDuration, easing: cubicOut });
 		show = false;
 	});
+
+	onDestroy(() => {
+		completeOnce();
+	});
 </script>
 
 <FadeContainer
 	{show}
 	oncomplete={() => {
-		if (!show) props.win.oncomplete();
+		if (!show) completeOnce();
 	}}
 >
 	<Container

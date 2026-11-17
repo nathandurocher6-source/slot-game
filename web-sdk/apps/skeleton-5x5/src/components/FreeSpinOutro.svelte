@@ -105,10 +105,10 @@
 </script>
 
 <FadeContainer {show}>
-	<!-- Dark Screen Blur Backdrop (Clickable) -->
+	<!-- Transparent screen capture: grid remains 100% visible and bright -->
 	<CanvasSizeRectangle
 		backgroundColor={0x000000}
-		backgroundAlpha={0.82}
+		backgroundAlpha={0}
 		zIndex={100}
 		eventMode="static"
 		cursor="pointer"
@@ -138,13 +138,24 @@
 			cursor="pointer"
 			onpointerup={continueAction}
 		>
-			<!-- Glow Accent -->
+			<!-- Deep Drop Shadow Plate (High contrast over bright reels) -->
 			<Rectangle
+				y={7}
 				width={CARD_WIDTH + 14}
 				height={CARD_HEIGHT + 14}
 				borderRadius={28}
+				backgroundColor={0x000000}
+				backgroundAlpha={0.92}
+				anchor={0.5}
+			/>
+
+			<!-- Warm Gold Glow Halo Behind Modal -->
+			<Rectangle
+				width={CARD_WIDTH + 16}
+				height={CARD_HEIGHT + 16}
+				borderRadius={28}
 				backgroundColor={0xffa500}
-				backgroundAlpha={0.25}
+				backgroundAlpha={0.3}
 				borderColor={0xffd700}
 				borderWidth={2}
 				anchor={0.5}
@@ -155,10 +166,10 @@
 				width={CARD_WIDTH}
 				height={CARD_HEIGHT}
 				borderRadius={22}
-				backgroundColor={0x181206}
-				backgroundAlpha={0.96}
+				backgroundColor={0x140e04}
+				backgroundAlpha={0.98}
 				borderColor={0xffd700}
-				borderWidth={2.5}
+				borderWidth={3}
 				anchor={0.5}
 			/>
 

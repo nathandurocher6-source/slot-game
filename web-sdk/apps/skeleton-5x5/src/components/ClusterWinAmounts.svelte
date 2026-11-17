@@ -9,6 +9,7 @@
 
 <script lang="ts">
 	import { waitForResolve } from 'utils-shared/wait';
+	import { stateBet } from 'state-shared';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
@@ -20,18 +21,25 @@
 	context.eventEmitter.subscribeOnMount({
 		showClusterWinAmounts: async (emitterEvent) => {
 			wins = emitterEvent.wins.map((rawWin) => ({ ...rawWin, oncomplete: () => {} }));
-			const gerPromises = () =>
+			const maxTimeout = stateBet.isTurbo ? 500 : 1200;
+			const getPromises = () =>
 				wins.map(async (win) => {
-					await waitForResolve((resolve) => (win.oncomplete = resolve));
+					await Promise.race([
+						waitForResolve((resolve) => (win.oncomplete = resolve)),
+						new Promise((resolve) => setTimeout(resolve, maxTimeout)),
+					]);
 				});
-			await Promise.all(gerPromises());
+			await Promise.race([
+				Promise.all(getPromises()),
+				new Promise((resolve) => setTimeout(resolve, maxTimeout + 100)),
+			]);
 			wins = [];
 		},
 	});
 </script>
 
 <BoardContainer>
-	{#each wins as win}
+	{#each wins as win (win.reel + '_' + win.row + '_' + win.result)}
 		<ClusterWinAmount {win} />
 	{/each}
 </BoardContainer>

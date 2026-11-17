@@ -26,11 +26,11 @@
 	});
 
 	const portraitPosition = $derived({
-		x: context.stateGameDerived.boardLayout().x - SYMBOL_SIZE * 1.8,
+		x: context.stateGameDerived.boardLayout().x - SYMBOL_SIZE * 1.6,
 		y:
 			context.stateGameDerived.boardLayout().y -
 			context.stateGameDerived.boardLayout().height * 0.5 -
-			SYMBOL_SIZE * 0.52,
+			SYMBOL_SIZE * 1.05,
 	});
 
 	const position = $derived(isStacked ? portraitPosition : desktopPosition);

@@ -93,11 +93,8 @@ export const initBetModes = () => {
 
 	stateMeta.betModeMeta = {
 		base: baseMeta,
-		BASE: baseMeta,
 		bonus_booster: boosterMeta,
-		BONUS_BOOSTER: boosterMeta,
 		bonus_buy: buyMeta,
-		BONUS_BUY: buyMeta,
 	};
 };
 
@@ -116,7 +113,9 @@ export const setContext = () => {
 		];
 	}
 	if (!stateConfig.betMenuOptions || stateConfig.betMenuOptions.length === 0) {
-		stateConfig.betMenuOptions = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0];
+		stateConfig.betMenuOptions = [
+			0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0, 100.0,
+		];
 	}
 
 	setContextEventEmitter<EmitterEvent>({ eventEmitter });

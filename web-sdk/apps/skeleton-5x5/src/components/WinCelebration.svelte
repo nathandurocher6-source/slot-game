@@ -2,7 +2,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { cubicOut, backOut } from 'svelte/easing';
-	import { Container, Rectangle, Text } from 'pixi-svelte';
+	import { Container, Rectangle, Text, Circle } from 'pixi-svelte';
 	import { CanvasSizeRectangle, MainContainer, OnPressFullScreen } from 'components-layout';
 	import { OnHotkey } from 'components-shared';
 	import { stateBet } from 'state-shared';
@@ -137,31 +137,79 @@
 			} else {
 				countUpAmount = endVal;
 				countUpCompleted = true;
+				scheduleAutoDismiss();
 			}
 		};
 
 		countUpRaf = requestAnimationFrame(step);
 	};
 
+	let autoDismissTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	const stopAllAnimations = () => {
+		if (countUpRaf) {
+			cancelAnimationFrame(countUpRaf);
+			countUpRaf = null;
+		}
+		if (rayRaf) {
+			cancelAnimationFrame(rayRaf);
+			rayRaf = null;
+		}
+		if (autoDismissTimeout) {
+			clearTimeout(autoDismissTimeout);
+			autoDismissTimeout = null;
+		}
+	};
+
+	const scheduleAutoDismiss = () => {
+		if (autoDismissTimeout) clearTimeout(autoDismissTimeout);
+
+		const isTurbo = stateBet.isTurbo;
+		const isAuto = context.stateXstateDerived.isAutoBetting();
+		const isMax = tier === 'MAX_WIN';
+
+		const delay = isTurbo ? (isMax ? 1400 : 600) : isAuto ? (isMax ? 2000 : 1200) : (isMax ? 3500 : 2500);
+
+		autoDismissTimeout = setTimeout(() => {
+			stopAllAnimations();
+			props.oncomplete?.();
+		}, delay);
+	};
+
 	const skipOrContinue = () => {
+		if (autoDismissTimeout) clearTimeout(autoDismissTimeout);
+
 		if (!countUpCompleted) {
 			// Skip count-up
 			if (countUpRaf) cancelAnimationFrame(countUpRaf);
+			countUpRaf = null;
 			countUpAmount = targetAmount;
 			countUpCompleted = true;
+			scheduleAutoDismiss();
 		} else {
 			// Complete modal
+			stopAllAnimations();
 			props.oncomplete?.();
 		}
 	};
 
+	let rayRotation = $state(0);
+	let rayRaf: number | null = null;
+	const animateRays = () => {
+		rayRotation += 0.008;
+		rayRaf = requestAnimationFrame(animateRays);
+	};
+
+	const sparklePulse = $derived(0.45 + 0.55 * Math.abs(Math.sin(rayRotation * 3.5)));
+
 	onMount(() => {
 		scale.set(1.0, { duration: 250, easing: backOut });
 		startCountUp();
+		rayRaf = requestAnimationFrame(animateRays);
 	});
 
 	onDestroy(() => {
-		if (countUpRaf) cancelAnimationFrame(countUpRaf);
+		stopAllAnimations();
 	});
 
 	const canvasSizes = $derived(context.stateLayoutDerived.canvasSizes());
@@ -169,8 +217,8 @@
 	const CARD_HEIGHT = $derived(tier === 'MAX_WIN' ? 260 : 220);
 </script>
 
-<!-- Dark Screen Blur / Dimmer -->
-<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.82} zIndex={100} />
+<!-- Completely transparent screen capture: background reels remain 100% visible and bright -->
+<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0} zIndex={100} />
 
 <!-- Fullscreen Click & Hotkey Handling -->
 <OnHotkey hotkey="Space" onpress={skipOrContinue} />
@@ -184,31 +232,147 @@
 		scale={{ x: scale.current, y: scale.current }}
 		zIndex={101}
 	>
-		<!-- Ambient Glow Behind Modal -->
-		<Rectangle
-			width={CARD_WIDTH + 18}
-			height={CARD_HEIGHT + 18}
-			borderRadius={30}
+		<!-- 1. Radial Sunburst Light Rays behind badge -->
+		<Container rotation={rayRotation}>
+			{#each [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330] as angle}
+				<Rectangle
+					width={CARD_WIDTH * 1.55}
+					height={4}
+					rotation={(angle * Math.PI) / 180}
+					backgroundColor={theme.border}
+					backgroundAlpha={0.18}
+					anchor={0.5}
+				/>
+			{/each}
+		</Container>
+
+		<!-- 2. Concentric Radial Glow Halos (Pragmatic / Hacksaw focal aura) -->
+		<Circle
+			diameter={CARD_WIDTH * 1.3}
 			backgroundColor={theme.glow}
-			backgroundAlpha={0.28}
-			borderColor={theme.border}
-			borderWidth={2}
+			backgroundAlpha={0.16}
+			anchor={0.5}
+		/>
+		<Circle
+			diameter={CARD_WIDTH * 0.95}
+			backgroundColor={theme.glow}
+			backgroundAlpha={0.25}
+			anchor={0.5}
+		/>
+		<Circle
+			diameter={CARD_WIDTH * 0.7}
+			backgroundColor={theme.border}
+			backgroundAlpha={0.32}
 			anchor={0.5}
 		/>
 
-		<!-- Modal Card Base -->
+		<!-- 3. Deep Drop Shadow Plate (Ensures razor-sharp contrast against bright reel symbols) -->
+		<Rectangle
+			y={7}
+			width={CARD_WIDTH + 14}
+			height={CARD_HEIGHT + 14}
+			borderRadius={28}
+			backgroundColor={0x000000}
+			backgroundAlpha={0.92}
+			anchor={0.5}
+		/>
+
+		<!-- 4. Modal Card Base (Dark metallic card with thick neon/gold border) -->
 		<Rectangle
 			width={CARD_WIDTH}
 			height={CARD_HEIGHT}
 			borderRadius={24}
-			backgroundColor={0x0c1017}
-			backgroundAlpha={0.96}
+			backgroundColor={0x080c14}
+			backgroundAlpha={0.98}
 			borderColor={theme.border}
-			borderWidth={2.5}
+			borderWidth={3}
 			anchor={0.5}
 		/>
 
-		<!-- Top Header Badge -->
+		<!-- 5. Inner Rim Chamfer Highlight -->
+		<Rectangle
+			width={CARD_WIDTH - 6}
+			height={CARD_HEIGHT - 6}
+			borderRadius={21}
+			backgroundColor={0x000000}
+			backgroundAlpha={0}
+			borderColor={0xffffff}
+			borderWidth={1}
+			borderAlpha={0.25}
+			anchor={0.5}
+		/>
+
+		<!-- 6. Sparkling Star Particles orbiting the badge -->
+		<Container>
+			<!-- Top-Left Sparkle -->
+			<Rectangle
+				x={-CARD_WIDTH * 0.46}
+				y={-CARD_HEIGHT * 0.46}
+				width={12}
+				height={12}
+				rotation={Math.PI / 4 + rayRotation}
+				backgroundColor={0xffffff}
+				backgroundAlpha={sparklePulse}
+				anchor={0.5}
+			/>
+			<!-- Top-Right Sparkle -->
+			<Rectangle
+				x={CARD_WIDTH * 0.46}
+				y={-CARD_HEIGHT * 0.46}
+				width={10}
+				height={10}
+				rotation={Math.PI / 4 - rayRotation}
+				backgroundColor={theme.border}
+				backgroundAlpha={sparklePulse}
+				anchor={0.5}
+			/>
+			<!-- Bottom-Left Sparkle -->
+			<Rectangle
+				x={-CARD_WIDTH * 0.46}
+				y={CARD_HEIGHT * 0.46}
+				width={10}
+				height={10}
+				rotation={Math.PI / 4 - rayRotation}
+				backgroundColor={theme.border}
+				backgroundAlpha={sparklePulse}
+				anchor={0.5}
+			/>
+			<!-- Bottom-Right Sparkle -->
+			<Rectangle
+				x={CARD_WIDTH * 0.46}
+				y={CARD_HEIGHT * 0.46}
+				width={12}
+				height={12}
+				rotation={Math.PI / 4 + rayRotation}
+				backgroundColor={0xffffff}
+				backgroundAlpha={sparklePulse}
+				anchor={0.5}
+			/>
+			<!-- Mid-Left Sparkle -->
+			<Rectangle
+				x={-CARD_WIDTH * 0.52}
+				y={0}
+				width={8}
+				height={8}
+				rotation={Math.PI / 4 + rayRotation}
+				backgroundColor={0xffffff}
+				backgroundAlpha={sparklePulse * 0.8}
+				anchor={0.5}
+			/>
+			<!-- Mid-Right Sparkle -->
+			<Rectangle
+				x={CARD_WIDTH * 0.52}
+				y={0}
+				width={8}
+				height={8}
+				rotation={Math.PI / 4 - rayRotation}
+				backgroundColor={theme.border}
+				backgroundAlpha={sparklePulse * 0.8}
+				anchor={0.5}
+			/>
+		</Container>
+
+		<!-- 7. Top Header Badge -->
 		<Rectangle
 			y={-CARD_HEIGHT * 0.5 + 24}
 			width={230}

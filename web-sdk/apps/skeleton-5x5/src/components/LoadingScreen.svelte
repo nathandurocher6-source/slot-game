@@ -10,6 +10,8 @@
 	import TransitionAnimation from './TransitionAnimation.svelte';
 	import PressToContinue from './PressToContinue.svelte';
 
+	import { pregenerateSymbolTextures } from '../game/symbolTextureCache';
+
 	type Props = {
 		onloaded: () => void;
 	};
@@ -22,6 +24,7 @@
 	const progress = new Tween(0);
 
 	onMount(async () => {
+		pregenerateSymbolTextures();
 		await progress.set(100, { duration: 500, easing: cubicOut });
 		isReady = true;
 	});

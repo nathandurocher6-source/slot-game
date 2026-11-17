@@ -30,6 +30,8 @@
 	import FreeSpinCounter from './FreeSpinCounter.svelte';
 	import FreeSpinOutro from './FreeSpinOutro.svelte';
 	import Transition from './Transition.svelte';
+	import PaytableContent from './PaytableContent.svelte';
+	import HudStudio from './HudStudio.svelte';
 
 	const context = getContext();
 
@@ -73,7 +75,6 @@
 			<Board />
 			<Anticipations />
 			<TumbleWinAmount />
-			<GlobalMultiplier />
 		</MainContainer>
 
 		<MainContainer>
@@ -81,35 +82,27 @@
 			<ClusterWinAmounts />
 		</MainContainer>
 
-		<UI>
-			{#snippet gameName()}
-				<UiGameName name="SKELETON 5X5" />
-			{/snippet}
-			{#snippet logo()}
-				<Text
-					anchor={{ x: 1, y: 0 }}
-					text="GREYBOX STUDIO"
-					style={{
-						fontFamily: 'system-ui, -apple-system, sans-serif',
-						fontSize: REM * 1.3,
-						fontWeight: '700',
-						lineHeight: REM * 2,
-						fill: 0x94a3b8,
-						letterSpacing: 1.5,
-					}}
-				/>
-			{/snippet}
-		</UI>
 		<Win />
 		<FreeSpinIntro />
 		<FreeSpinCounter />
+		<GlobalMultiplier />
 		<FreeSpinOutro />
 		<Transition />
 	{/if}
 </App>
 
+{#if !context.stateLayout.showLoadingScreen}
+	<HudStudio />
+{/if}
+
 <Modals>
 	{#snippet version()}
 		<GameVersion version="0.0.0" />
+	{/snippet}
+	{#snippet paytable()}
+		<PaytableContent />
+	{/snippet}
+	{#snippet gameRules()}
+		<PaytableContent />
 	{/snippet}
 </Modals>
